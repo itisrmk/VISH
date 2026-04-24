@@ -1,0 +1,20 @@
+[package]
+name = "s2-gpui-stack"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "s2-gpui-stack"
+path = "src/main.rs"
+
+[dependencies]
+gpui = { git = "https://github.com/zed-industries/zed", rev = "f7d46cf7d02c88d3d71ec495a31d7f19bd5eb96b" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component", rev = "808df4069295ef4e0b3b01445671c3c7057377cd" }
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", default-features = false, features = ["NSApplication", "NSResponder"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["NSString"] }
+dispatch2 = "0.3"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
