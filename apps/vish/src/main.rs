@@ -6,7 +6,9 @@ use std::rc::Rc;
 use anyhow::{Context as _, Result};
 use global_hotkey::HotKeyState;
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
-use gpui::{AppContext, Bounds, Empty, WindowKind, WindowOptions, px, size};
+use gpui::{
+    AppContext, Bounds, Empty, WindowBackgroundAppearance, WindowKind, WindowOptions, px, size,
+};
 use objc2::MainThreadMarker;
 use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy};
 use vish_macos::hotkey::Hotkey;
@@ -52,6 +54,9 @@ fn main() -> Result<()> {
             is_minimizable: false,
             focus: true,
             show: true,
+            // Transparent so our NSVisualEffectView (applied by vibrancy::apply) is visible.
+            // Opaque (default) makes GPUI paint its own backdrop over the vibrancy layer.
+            window_background: WindowBackgroundAppearance::Transparent,
             ..Default::default()
         };
 
