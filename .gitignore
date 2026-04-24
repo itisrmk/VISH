@@ -1,0 +1,10 @@
+/target
+/dist
+**/*.rs.bk
+.DS_Store
+/third-party/reference/
+/third-party/*/target
+/third-party/mlx_sidecar/.venv
+/third-party/mlx_sidecar/__pycache__
+/resources/provisioning/*.p12
+*.log

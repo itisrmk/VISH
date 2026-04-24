@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/rahulkashyap/Desktop/Projects/VISH/.claude/hooks/append-log.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
