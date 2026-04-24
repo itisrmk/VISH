@@ -1,0 +1,8 @@
+[package]
+name = "vish-ui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
