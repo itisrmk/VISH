@@ -180,16 +180,32 @@ that would be speculative abstraction over a one-liner.
 
 ## collectionBehavior
 
-Target value: `CanJoinAllSpaces | FullScreenAuxiliary | MoveToActiveSpace`.
+Target value: `MoveToActiveSpace | FullScreenAuxiliary`.
 
-GPUI sets `CanJoinAllSpaces | FullScreenAuxiliary` (confirmed at
-`gpui_macos/src/window.rs:879-882`). We OR in `MoveToActiveSpace` inside
-`panel::configure` — read current, add our bit, write back.
+**Empirical finding from Task B runtime test:** `CanJoinAllSpaces` and
+`MoveToActiveSpace` are mutually exclusive at the AppKit level. Setting both
+raises an Obj-C exception from `-[NSWindow setCollectionBehavior:]` which
+propagates as an unwind failure across our Rust frames (observed as a
+misleading "Leases must be ended" GPUI panic because the Obj-C exception
+skipped the normal return path). Apple's docs on this group are
+under-specified in objc2-app-kit 0.3's re-exported headers but confirmed in
+Apple's online reference: these two bits partition "appears on every space"
+vs "follows the active space" behavior and you pick one.
 
-Why `MoveToActiveSpace` (PHASE_1_PLAN §3): without it, when the user switches
-Spaces, the panel stays on the Space it was first shown on. The Raycast UX
-requires the panel to pop on *whatever Space is currently active* when
-⌥Space is pressed.
+GPUI sets `CanJoinAllSpaces | FullScreenAuxiliary` (`gpui_macos/src/window.rs:879-882`).
+We **clear** `CanJoinAllSpaces` and **OR in** `MoveToActiveSpace`, preserving
+`FullScreenAuxiliary`:
+
+```rust
+let new = (current & !NSWindowCollectionBehavior::CanJoinAllSpaces)
+    | NSWindowCollectionBehavior::MoveToActiveSpace;
+```
+
+Why `MoveToActiveSpace` (PHASE_1_PLAN §3): the Raycast UX requires the panel
+to pop on *whatever Space is currently active* when ⌥Space is pressed — not
+to appear simultaneously on every Space. The visual/semantic difference
+shows only when the user has multiple Spaces; on single-Space setups the
+choice is invisible.
 
 Note that GPUI does **not** set `IgnoresCycle` or `Stationary` — and we don't
 want them either. `Stationary` defeats `MoveToActiveSpace`.
@@ -244,11 +260,12 @@ Reference to copy verbatim for the std::thread structure:
    we later see focus-steal regressions, port the `object_setClass` swizzle
    from `tauri-nspanel/src/panel.rs:558-628`.
 
-3. **`MoveToActiveSpace` application strategy.** Read-modify-write (OR in our
-   bit, preserving GPUI's future additions) vs. set wholesale. I chose
-   read-modify-write. Alternative: set the full target value and accept that
-   future GPUI bumps might lose a bit we wanted. **Proposal: keep
-   read-modify-write** — 3 lines vs. 1, but stable across GPUI bumps.
+3. **`MoveToActiveSpace` application strategy.** Read-modify-write,
+   specifically: clear `CanJoinAllSpaces` and OR `MoveToActiveSpace`.
+   **Resolved in Task B at runtime.** Naïve OR-only raised an Obj-C exception
+   at `setCollectionBehavior:` because the two bits are mutually exclusive
+   (see §"collectionBehavior"). We preserve `FullScreenAuxiliary` and any
+   other GPUI-set bits, swap the space-behavior bit.
 
 4. **Hotkey→GPUI bridge exact mechanism.** Commit in Task B. Proposed pattern
    documented above. The alternative — calling `cx.update` directly from the

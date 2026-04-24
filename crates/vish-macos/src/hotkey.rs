@@ -9,7 +9,9 @@
 //! The caller is responsible for bridging those events into GPUI's foreground
 //! executor — see `NOTES.md` §"Hotkey↔GPUI bridge".
 
-use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyEventReceiver, hotkey::HotKey};
+use global_hotkey::{
+    GlobalHotKeyEvent, GlobalHotKeyEventReceiver, GlobalHotKeyManager, hotkey::HotKey,
+};
 
 /// Re-export so callers can type-annotate channel adapters without taking a
 /// direct `global-hotkey` dependency.
@@ -28,7 +30,7 @@ pub enum Error {
 /// Construct once per process. Dropping the handle unregisters every hotkey it
 /// owns — keep it alive for the lifetime of the UI.
 pub struct Hotkey {
-    _manager: global_hotkey::GlobalHotKeyManager,
+    _manager: GlobalHotKeyManager,
     _id: u32,
 }
 
@@ -39,8 +41,15 @@ impl Hotkey {
     /// `GlobalHotKeyManager::new()` installs a Carbon event handler onto the
     /// main run loop; calling it off-main produces silent undelivered events.
     /// Reference: `third-party/spikes/s3-hotkey/src/main.rs`.
-    pub fn register(_hotkey: HotKey) -> Result<Self, Error> {
-        todo!()
+    pub fn register(hotkey: HotKey) -> Result<Self, Error> {
+        let id = hotkey.id();
+        let manager = GlobalHotKeyManager::new()?;
+        manager.register(hotkey)?;
+        tracing::info!(id, "registered global hotkey");
+        Ok(Self {
+            _manager: manager,
+            _id: id,
+        })
     }
 
     /// Subscribe to fire events.
@@ -55,6 +64,6 @@ impl Hotkey {
     /// (CLAUDE.md §3 threading invariants; Loungy's 50ms polling in
     /// `hotkey.rs:96-98` is 8 frames at 120Hz — we do not copy that).
     pub fn on_fire() -> &'static GlobalHotKeyEventReceiver {
-        todo!()
+        GlobalHotKeyEvent::receiver()
     }
 }

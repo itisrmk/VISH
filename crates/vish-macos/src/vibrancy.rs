@@ -5,6 +5,7 @@
 //! `thiserror` variant.
 
 use raw_window_handle::HasWindowHandle;
+use window_vibrancy::{NSVisualEffectMaterial, NSVisualEffectState, apply_vibrancy};
 
 /// Errors raised by this module.
 #[derive(Debug, thiserror::Error)]
@@ -24,9 +25,15 @@ pub enum Error {
 ///
 /// **Precondition:** `window` must already exist and have its content view
 /// installed — call after GPUI has opened the window.
-pub fn apply<W>(_window: &W) -> Result<(), Error>
+pub fn apply<W>(window: &W) -> Result<(), Error>
 where
     W: HasWindowHandle,
 {
-    todo!()
+    apply_vibrancy(
+        window,
+        NSVisualEffectMaterial::HudWindow,
+        Some(NSVisualEffectState::FollowsWindowActiveState),
+        None,
+    )?;
+    Ok(())
 }

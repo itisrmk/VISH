@@ -13,3 +13,14 @@ path = "src/main.rs"
 anyhow.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+vish-macos = { path = "../../crates/vish-macos" }
+gpui.workspace = true
+gpui_platform.workspace = true
+global-hotkey.workspace = true
+objc2.workspace = true
+objc2-app-kit = { workspace = true, features = [
+    "NSApplication",
+    "NSResponder",
+    "NSRunningApplication",
+] }
+tokio.workspace = true
