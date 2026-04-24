@@ -4,6 +4,19 @@ Validates that `mlx_lm.server` speaks OpenAI Chat Completions SSE verbatim. This
 
 The spike uses `mlx-community/SmolLM2-135M-Instruct-4bit` (~80MB) because the spike is **protocol-only**. Llama-3.1-8B-Q4 is validated in Phase 3 when inference quality matters.
 
+## Prerequisites
+
+- `uv` (Astral's Python package manager).
+- `jq`, `curl`.
+
+Install `uv` if not present:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# then restart shell or: source $HOME/.local/bin/env
+```
+
+> Phase 0 kickoff discovered `uv` was not actually present on this machine despite the initial questionnaire answer. `run.sh`'s first sanity check exits with `FAIL: uv not on PATH` if it's missing; that's the expected behavior — install uv and re-run.
+
 ## Run
 
 ```bash
