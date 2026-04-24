@@ -6,9 +6,7 @@ use std::rc::Rc;
 use anyhow::{Context as _, Result};
 use global_hotkey::HotKeyState;
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
-use gpui::{
-    AppContext, Bounds, Empty, WindowBackgroundAppearance, WindowKind, WindowOptions, px, size,
-};
+use gpui::{AppContext, Bounds, WindowBackgroundAppearance, WindowKind, WindowOptions, px, size};
 use objc2::MainThreadMarker;
 use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy};
 use vish_macos::hotkey::Hotkey;
@@ -44,6 +42,8 @@ fn main() -> Result<()> {
         let app = NSApplication::sharedApplication(mtm);
         app.setActivationPolicy(NSApplicationActivationPolicy::Accessory);
 
+        gpui_component::init(cx);
+
         let bounds = Bounds::centered(None, size(px(WINDOW_WIDTH_PX), px(WINDOW_HEIGHT_PX)), cx);
         let options = WindowOptions {
             window_bounds: Some(gpui::WindowBounds::Windowed(bounds)),
@@ -60,7 +60,10 @@ fn main() -> Result<()> {
             ..Default::default()
         };
 
-        let window_handle = match cx.open_window(options, |_window, cx| cx.new(|_| Empty)) {
+        let window_handle = match cx.open_window(options, |window, cx| {
+            let view = cx.new(|cx| vish_ui::root::RootView::new(window, cx));
+            cx.new(|cx| gpui_component::Root::new(view, window, cx))
+        }) {
             Ok(handle) => handle,
             Err(e) => {
                 tracing::error!(error = %e, "open_window failed");
