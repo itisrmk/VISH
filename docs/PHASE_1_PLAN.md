@@ -109,10 +109,19 @@ git clone --depth 1 https://github.com/pop-os/launcher pop-launcher-reference
 
 Record cloned HEAD SHAs in `third-party/SOURCES.md` so bumps are deliberate.
 
-### 1.5 Tool installs (~15 min)
+### 1.5 Tool installs (~15 min + one-time Metal download)
 
 ```bash
-# Already have: uv, Python 3.11+
+# Required before first `cargo build` of the workspace.
+# Xcode 26+ ships without the Metal toolchain; GPUI's build script invokes
+# `xcrun metal …` to compile shaders and fails without it. ~700MB, one-shot.
+xcodebuild -downloadComponent MetalToolchain
+
+# Python sidecar toolchain. Phase 0 kickoff discovered uv was NOT actually
+# present despite the initial questionnaire answer; verify with `command -v uv`:
+#   curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Remaining tools:
 brew install create-dmg
 cargo install --git https://github.com/zed-industries/cargo-bundle --branch zed-deploy cargo-bundle
 # notarytool profile: deferred — Dev ID not yet provisioned
