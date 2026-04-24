@@ -1,0 +1,18 @@
+[package]
+name = "s3-hotkey"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "s3-hotkey"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+global-hotkey = "0.7"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+objc2 = "0.6"
+objc2-foundation = "0.3"
+objc2-app-kit = { version = "0.3", features = ["NSApplication", "NSResponder"] }

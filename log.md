@@ -16,6 +16,7 @@ Format of auto-entries: `` - `UTC timestamp` **Tool** — description — `comma
 - 5 of 6 OSS references shallow-cloned into `third-party/reference/` (gitignored). SHAs recorded in `third-party/SOURCES.md`. Commit `1bc62b6`.
 - sparkle-updater reference: upstream URL `ahkohd/tauri-plugin-sparkle-updater` returned 404. Deferred to pre-Week-4 — either locate a live fork or bridge `sparkle-project/Sparkle` directly via objc2. Noted in `SOURCES.md` followups.
 - Phase 0 spike S3 (global-hotkey ⌥Space) launched in background via `general-purpose` subagent, instructed to load and obey `.claude/agents/vish-engineer.md` as its operating contract (actual `vish-engineer` subagent not yet runtime-registered — will be directly invokable next session).
+- **Spike S3 result: PASSED (compile-time).** Agent delivered 35-line `src/main.rs` using `global-hotkey 0.7` + `objc2-app-kit 0.3` `NSApplicationActivationPolicy::Accessory`, registers ⌥Space, event thread logs `id` + `state` via structured `tracing`. Pass 2 removed two unnecessary `unsafe` blocks (objc2-app-kit 0.3 exposes `setActivationPolicy`/`run` as safe). Verified independently: `cargo check` + `cargo clippy --all-targets -- -D warnings` both clean. **Runtime validation left to human:** `cd third-party/spikes/s3-hotkey && cargo run`, press ⌥Space, expect `hotkey fired … state=Pressed/Released` log lines. AX prompt on launch = spike failed → trigger risk R2 (⌥⌘Space fallback).
 
 ---
 - `2026-04-24T04:46:47Z` **Bash** — Hook self-test — `echo test `
