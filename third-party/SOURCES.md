@@ -6,9 +6,15 @@ Records the exact HEAD SHA of every external reference repo we clone into `third
 
 | Repo | Upstream | Purpose | Cloned SHA | Cloned date |
 |---|---|---|---|---|
-| loungy-reference | [MatthiasGrandl/Loungy](https://github.com/MatthiasGrandl/Loungy) | UI shell / patterns to port into vish-macos + vish-ui | TBD | TBD |
-| tauri-nspanel-reference | [ahkohd/tauri-nspanel](https://github.com/ahkohd/tauri-nspanel) | ~40-line NSPanel `.nonactivating` objc2 wrapper | TBD | TBD |
-| imessage-tools-reference | [ReagentX/imessage-exporter](https://github.com/ReagentX/imessage-exporter) | `attributedBody` NSKeyedArchiver decoder | TBD | TBD |
-| sparkle-updater-reference | [ahkohd/tauri-plugin-sparkle-updater](https://github.com/ahkohd/tauri-plugin-sparkle-updater) | Sparkle 2 objc2 bridge pattern | TBD | TBD |
-| zed-reference | [zed-industries/zed](https://github.com/zed-industries/zed) | GPUI examples + picker crate + ForegroundExecutor pattern | TBD | TBD |
-| pop-launcher-reference | [pop-os/launcher](https://github.com/pop-os/launcher) | JSON-line plugin-as-child-process protocol | TBD | TBD |
+| loungy-reference | [MatthiasGrandl/Loungy](https://github.com/MatthiasGrandl/Loungy) | UI shell / patterns to port into vish-macos + vish-ui | `303e7d2c46db13c49f8c7ca30762e5ee0ac582d2` | 2026-04-23 |
+| tauri-nspanel-reference | [ahkohd/tauri-nspanel](https://github.com/ahkohd/tauri-nspanel) | ~40-line NSPanel `.nonactivating` objc2 wrapper | `a3122e894383aa068ec5365a42994e3ac94ba1b6` | 2026-04-23 |
+| imessage-tools-reference | [ReagentX/imessage-exporter](https://github.com/ReagentX/imessage-exporter) | `attributedBody` NSKeyedArchiver decoder (crate: `imessage-database`) | `b60ecc98d07eb31a68d948415b98c7fff23195a9` | 2026-04-23 |
+| pop-launcher-reference | [pop-os/launcher](https://github.com/pop-os/launcher) | JSON-line plugin-as-child-process protocol | `5b868510716673b31a650488401489898352e2d9` | 2026-04-23 |
+| zed-reference | [zed-industries/zed](https://github.com/zed-industries/zed) | GPUI examples + `picker` crate + ForegroundExecutor pattern (`--filter=blob:none`) | `385f6134bbadf9820f30dfd5944c01359e5ce159` | 2026-04-23 |
+| sparkle-updater-reference | TBD — Phase 0 found no repo at `ahkohd/tauri-plugin-sparkle-updater` (404) | Sparkle 2 objc2 bridge pattern | not cloned | pending |
+
+## Followups
+
+- **sparkle-updater-reference:** the URL cited in the original plan (`ahkohd/tauri-plugin-sparkle-updater`) returns 404. Not blocking — only needed in Phase 1 Week 4 for the objc2 Sparkle wrapper. Before Week 4, either find a live fork or write the ~50-line Sparkle SPUStandardUpdaterController bridge from scratch against Apple's Sparkle framework directly (`sparkle-project/Sparkle`). Candidates to investigate:
+  - `sparkle-project/Sparkle` — the Sparkle framework itself, Objective-C. Use as the native dep; bridge via objc2.
+  - Any Rust crate in the Tauri community that currently wraps Sparkle (search crates.io for `sparkle`).
