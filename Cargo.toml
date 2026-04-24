@@ -32,6 +32,9 @@ objc2 = "0.6"
 objc2-app-kit = { version = "0.3", default-features = false }
 objc2-foundation = { version = "0.3", default-features = false }
 dispatch2 = "0.3"
+global-hotkey = "0.7"
+window-vibrancy = "0.6"
+raw-window-handle = { version = "0.6", features = ["std"] }
 
 [profile.release]
 lto = "thin"

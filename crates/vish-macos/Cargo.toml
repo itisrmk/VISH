@@ -6,3 +6,18 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
+objc2 = { workspace = true }
+objc2-app-kit = { workspace = true, features = [
+    "NSApplication",
+    "NSPanel",
+    "NSResponder",
+    "NSView",
+    "NSWindow",
+] }
+objc2-foundation = { workspace = true }
+dispatch2 = { workspace = true }
+global-hotkey = { workspace = true }
+window-vibrancy = { workspace = true }
+raw-window-handle = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
