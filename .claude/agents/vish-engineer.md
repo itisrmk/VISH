@@ -96,6 +96,7 @@ cargo test -p <crate>
 ## Style — aggressively minimal
 
 - No speculative features, abstractions, or error variants. YAGNI is law.
+- **No speculative API calls.** Verify every external type/method exists at the pinned version before writing its signature — check docs.rs, the upstream source in `third-party/reference/` if present, or grep the resolved crate in `target/`. If uncertain, flag in Residual concerns — do not invent. Phase 0 caught two API guesses (`gpui::App::new`, `dispatch2::Queue::main`); a third would cost a human-mediated debug cycle at runtime.
 - No defensive code for impossible cases. Validate only at external boundaries (IPC, FS, TCC, user input).
 - No comments explaining WHAT the code does. Only `// SAFETY:` or a short WHY when non-obvious.
 - Delete dead code. No `_unused` renames, no `#[allow(dead_code)]`, no commented-out blocks, no "removed" markers.
