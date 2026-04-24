@@ -30,6 +30,8 @@ Format of auto-entries: `` - `UTC timestamp` **Tool** — description — `comma
   3. `gpui` default features include `wayland`/`x11` on macOS — harmless, target-gated no-ops. No override needed.
 - **CLAUDE.md §2 updated** (commit `1bfd0c1`) with the locked pins and the feature-flag rule.
 - Commits this run: `c46e13e` (S1 script) → `1f0299a` (log) → `c367cf8` (S1 uv finding) → `1bfd0c1` (S2+S4 + §2 pins).
+- Sparkle candidates identified: `hankbao/sparkle-updater` (native Rust, best fit), `crates.io/tauri-plugin-sparkle-updater v0.2.2` (Tauri-specific but uses exact objc2 pins), `sparkle-project/Sparkle` (ultimate fallback). Documented in `SOURCES.md`. Week 4 unblocked. Commit `699e11d`.
+- **Phase 1 Week 1 COMPLETE.** Agent scaffolded Cargo workspace with 10 members (apps/vish, apps/vishd, 8 crates/vish-*) + rust-toolchain.toml + scripts/{dev,reset-tcc}.sh. [workspace.dependencies] uses the minimal Week-1 set plus Phase 0 UI stack pins. All four exit gates green: cargo build/test/clippy clean, `./scripts/dev.sh` emits `INFO vish: vish starting` and exits 0. Pass 2: no changes (stubs are trivially minimal). Commit `c902dcc`. Agent flagged a minor brittleness: Week-1-style assertion via `head -5` can fail on cold cache; use `grep -q "vish starting"` in future gate scripts.
 
 ---
 - `2026-04-24T04:46:47Z` **Bash** — Hook self-test — `echo test `
