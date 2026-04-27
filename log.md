@@ -674,6 +674,14 @@
   `663ec5a36a4c6707fe2d45324801d039a1bf89207f3b9ee72ca59cb08dcc6650`
 - Release archive command passed through:
   `scripts/release.sh 0.1.0-alpha.1`
+- Created public GitHub repository:
+  `https://github.com/itisrmk/VISH`
+- Pushed `main` and tag:
+  `v0.1.0-alpha.1`
+- Published GitHub prerelease with downloadable DMG:
+  `https://github.com/itisrmk/VISH/releases/tag/v0.1.0-alpha.1`
+- Direct DMG URL:
+  `https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.1/vish-0.1.0-alpha.1.dmg`
 
 ### Known Gaps
 
