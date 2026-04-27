@@ -1,0 +1,4 @@
+{
+  "build_ms": 1028,
+  "note": "Build-only placeholder. Instruments launch and hot-path probes are still required before shipping."
+}

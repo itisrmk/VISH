@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "ok": true,
+  "ollama_base_url": "http://localhost:11434",
+  "ollama_version": {
+    "version": "0.15.4"
+  },
+  "selected_model": "llama3.2:3b",
+  "installed_models": [
+    "llama3.2:3b"
+  ],
+  "cold_chat": {
+    "ok": true,
+    "first_token_ms": 114,
+    "total_ms": 213,
+    "eval_count": 5,
+    "eval_duration_ns": 97713584,
+    "tokens_per_second": 51.17,
+    "content_chars": 10,
+    "load_duration_ns": 83424542
+  },
+  "warm_chat": {
+    "ok": true,
+    "first_token_ms": 90,
+    "total_ms": 191,
+    "eval_count": 5,
+    "eval_duration_ns": 100184125,
+    "tokens_per_second": 49.91,
+    "content_chars": 10,
+    "load_duration_ns": 63987625
+  },
+  "embedding": {
+    "ok": false,
+    "model": "embeddinggemma",
+    "error": "404 {\"error\":\"model \\\"embeddinggemma\\\" not found, try pulling it first\"}"
+  },
+  "mempalace": {
+    "ok": false,
+    "skipped": true,
+    "reason": "mempalace command not found"
+  },
+  "budgets": {
+    "first_token_ms": 1500.0,
+    "tokens_per_second": 20.0,
+    "embed_8_docs_ms": 500.0,
+    "mempalace_search_ms": 250.0
+  },
+  "budget_status": {
+    "warm_first_token": true,
+    "warm_tokens_per_second": true,
+    "embed_8_docs": false,
+    "mempalace_search": true
+  },
+  "note": "AI benchmark only. Existing launcher budgets still require scripts/benchmark.sh and signpost traces."
+}

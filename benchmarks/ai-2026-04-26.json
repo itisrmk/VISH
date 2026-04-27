@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "ok": true,
+  "ollama_base_url": "http://localhost:11434",
+  "ollama_version": {
+    "version": "0.15.4"
+  },
+  "selected_model": "qwen3:4b",
+  "installed_models": [
+    "qwen3:4b",
+    "embeddinggemma:latest",
+    "llama3.2:3b"
+  ],
+  "cold_chat": {
+    "ok": true,
+    "first_token_ms": 5971,
+    "total_ms": 8090,
+    "eval_count": 64,
+    "eval_duration_ns": 2101028164,
+    "tokens_per_second": 30.46,
+    "content_chars": 244,
+    "load_duration_ns": 5575315125
+  },
+  "warm_chat": {
+    "ok": true,
+    "first_token_ms": 103,
+    "total_ms": 2047,
+    "eval_count": 64,
+    "eval_duration_ns": 1925708288,
+    "tokens_per_second": 33.23,
+    "content_chars": 236,
+    "load_duration_ns": 66450125
+  },
+  "cold_embedding": {
+    "ok": true,
+    "model": "embeddinggemma",
+    "total_ms": 1851,
+    "count": 8,
+    "dimensions": 768,
+    "reported_total_duration_ns": 1849672250
+  },
+  "warm_embedding": {
+    "ok": true,
+    "model": "embeddinggemma",
+    "total_ms": 116,
+    "count": 8,
+    "dimensions": 768,
+    "reported_total_duration_ns": 114432625
+  },
+  "embedding": {
+    "ok": true,
+    "model": "embeddinggemma",
+    "total_ms": 116,
+    "count": 8,
+    "dimensions": 768,
+    "reported_total_duration_ns": 114432625
+  },
+  "mempalace": {
+    "ok": false,
+    "skipped": true,
+    "reason": "mempalace command not found"
+  },
+  "budgets": {
+    "first_token_ms": 1500.0,
+    "tokens_per_second": 20.0,
+    "embed_8_docs_ms": 500.0,
+    "mempalace_search_ms": 250.0
+  },
+  "budget_status": {
+    "warm_first_token": true,
+    "warm_tokens_per_second": true,
+    "embed_8_docs": true,
+    "mempalace_search": true
+  },
+  "note": "AI benchmark only. Existing launcher budgets still require scripts/benchmark.sh and signpost traces."
+}

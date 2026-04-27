@@ -1,0 +1,51 @@
+name: vish
+options:
+  minimumXcodeGenVersion: 2.42.0
+  deploymentTarget:
+    macOS: "14.0"
+  developmentLanguage: en
+settings:
+  base:
+    CLANG_ENABLE_MODULES: YES
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts.git
+    version: 1.17.0
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle.git
+    version: 2.9.1
+schemes:
+  vish:
+    build:
+      targets:
+        vish: all
+    run:
+      config: Debug
+targets:
+  vish:
+    type: application
+    platform: macOS
+    supportedDestinations:
+      - macOS
+    sources:
+      - path: vish
+        excludes:
+          - Resources/Info.plist
+          - vish.entitlements
+    dependencies:
+      - package: KeyboardShortcuts
+      - package: Sparkle
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vish.app
+        PRODUCT_NAME: vish
+        INFOPLIST_FILE: vish/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: vish/vish.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        VISH_SPARKLE_FEED_URL: ""
+        VISH_SPARKLE_PUBLIC_ED_KEY: ""
