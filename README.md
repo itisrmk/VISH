@@ -104,4 +104,4 @@ This is an alpha build. The core launcher is usable, but release hardening is st
 
 ## License
 
-No open-source license has been selected yet.
+MIT. See [LICENSE](LICENSE).
