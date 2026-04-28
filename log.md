@@ -693,6 +693,10 @@
 - Debug build passed and verified the built app contains:
   `Contents/Resources/AppIcon.icns`
   `Contents/Resources/Assets.car`
+- Built and published `v0.1.0-alpha.2` so the downloadable DMG includes the new logo:
+  `https://github.com/itisrmk/VISH/releases/tag/v0.1.0-alpha.2`
+- Alpha 2 DMG checksum:
+  `aceff9e33133f5f7c291613ae2639155c3cb83912293b1717b307589cac4bb8d`
 
 ### Known Gaps
 
