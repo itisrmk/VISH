@@ -683,6 +683,17 @@
 - Direct DMG URL:
   `https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.1/vish-0.1.0-alpha.1.dmg`
 
+## 2026-04-27 - Simple Mac App Logo
+
+- Added a minimal macOS app icon asset catalog at `vish/Resources/Assets.xcassets/AppIcon.appiconset`.
+- Logo direction: blue rounded-square mark with subtle macOS-style depth and a white `V`.
+- Generated required macOS icon PNG sizes from 16 through 1024 px.
+- Updated `project.yml` so regenerated Xcode projects keep `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`.
+- Regenerated `vish.xcodeproj` with `xcodegen generate`.
+- Debug build passed and verified the built app contains:
+  `Contents/Resources/AppIcon.icns`
+  `Contents/Resources/Assets.car`
+
 ### Known Gaps
 
 - Production Settings/onboarding still needs user screenshot review; build verification is not a visual approval.
