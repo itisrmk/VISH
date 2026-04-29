@@ -24,7 +24,7 @@ Read `log.md` before implementation work. It records the current handoff state, 
 - Benchmark: `./scripts/benchmark.sh`
 - AI benchmark: `./scripts/ai-benchmark.sh`
 - Signpost report from an Instruments trace/export: `scripts/signpost-report.sh <trace.trace|export.xml> [xpath]`
-- Package release DMG: `scripts/release.sh <version>`; notarization runs only when `AC_PROFILE` is set. Sparkle release builds can pass `SPARKLE_FEED_URL`, `SPARKLE_PUBLIC_ED_KEY`, and optional `SPARKLE_GENERATE_APPCAST`.
+- Package release DMG: `scripts/release.sh <version>`; notarization runs only when `AC_PROFILE` is set. Sparkle release builds default to the GitHub raw `appcast.xml`, public EdDSA key, and local ignored `resources/provisioning/sparkle_ed25519_private_key.txt` for appcast signing. Set `SPARKLE_GENERATE_APPCAST=0` only for local packaging that should skip appcast generation.
 
 ## Current state - 2026-04-27
 
@@ -58,7 +58,7 @@ Read `log.md` before implementation work. It records the current handoff state, 
 - First-run onboarding is implemented in SwiftUI only, gated by `onboarding.completed`, shown after `ColdLaunchReady`, and reopenable from the menu bar through `Getting Started...`. The flow is value -> permissions -> feature defaults -> ready, and optional permissions/features must stay skippable.
 - Do not reintroduce the previous green Settings accent, multicolor Settings accent gradients, or default checkbox toggles.
 - Launcher panel defaults to 704 x 68 collapsed and 704 x 344 expanded, supports a bounded 86%-118% size scale, and persists a clamped top-left anchor when the user drags it.
-- Sparkle 2.9.1 is linked by SwiftPM, but `UpdateController` only starts Sparkle when `SUFeedURL` and `SUPublicEDKey` are configured through release build settings.
+- Sparkle 2.9.1 is linked by SwiftPM. Release builds ship with `SUFeedURL` and `SUPublicEDKey`; `UpdateController` uses Sparkle when configured and falls back to GitHub Releases for local/custom builds missing config. The private EdDSA signing key is local-only and ignored at `resources/provisioning/sparkle_ed25519_private_key.txt`.
 - Latest passing Release smoke benchmark from `benchmarks/2026-04-27.json`: `launch_to_pid_ms: 107`, `idle_rss_kb: 75296`, `idle_cpu_percent_average: 0.0`.
 - Latest passing AI benchmark from `benchmarks/ai-2026-04-26.json`: selected chat `qwen3:4b`, warm first token `103 ms`, warm tokens/sec `33.23`, selected embedding `embeddinggemma`, warm 8-document embedding `116 ms`.
 - Last verified validation commands: `xcodegen generate`, `xcodebuild -scheme vish -configuration Debug -destination 'platform=macOS,arch=arm64'`, `./scripts/benchmark.sh`, and `./scripts/ai-benchmark.sh`.
@@ -68,7 +68,7 @@ Read `log.md` before implementation work. It records the current handoff state, 
 
 - Validate launcher and Settings visually from screenshots before claiming UI work is done.
 - Use Instruments or signpost analysis with `scripts/signpost-report.sh` for hotkey-to-frame, keystroke-to-render, and Spotlight p95 before claiming performance-budget completion.
-- Finish missing v1 surfaces: Developer ID/notarized release credentials, hosted Sparkle appcast, and a full VoiceOver session.
+- Finish missing v1 surfaces: Developer ID/notarized release credentials, production appcast hosting, and a full VoiceOver session.
 - Keep UI customization simple. Prefer small typed preferences over a full theme editor until the core product is stable.
 
 ## Stop conditions

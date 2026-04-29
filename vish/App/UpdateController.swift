@@ -20,7 +20,7 @@ final class UpdateController: NSObject {
 
     func checkForUpdates() {
         guard let updaterController else {
-            showMissingConfiguration()
+            showManualUpdateFallback()
             return
         }
 
@@ -38,12 +38,16 @@ final class UpdateController: NSObject {
         return trimmed
     }
 
-    private func showMissingConfiguration() {
+    private func showManualUpdateFallback() {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
-        alert.messageText = "Updates are not configured"
-        alert.informativeText = "Release builds need VISH_SPARKLE_FEED_URL and VISH_SPARKLE_PUBLIC_ED_KEY."
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        alert.messageText = "Manual update required"
+        alert.informativeText = "This build is not connected to the signed update feed. Open GitHub Releases to download the latest VISH build."
+        alert.addButton(withTitle: "Open Releases")
+        alert.addButton(withTitle: "Cancel")
+
+        guard alert.runModal() == .alertFirstButtonReturn,
+              let url = URL(string: "https://github.com/itisrmk/VISH/releases/latest") else { return }
+        NSWorkspace.shared.open(url)
     }
 }

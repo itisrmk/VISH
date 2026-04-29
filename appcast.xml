@@ -1,0 +1,25 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>vish</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Tue, 28 Apr 2026 18:59:12 -0700</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# VISH 0.1.0 Alpha 4
+
+This alpha fixes the update flow.
+
+- Sparkle builds now ship with a real feed URL and EdDSA public key.
+- The app uses Sparkle for update checks when configured.
+- Local or custom builds without Sparkle config now open GitHub Releases instead of showing developer environment variables.
+- Release packaging now generates a signed `appcast.xml` with monotonic Sparkle build versions.
+
+Still alpha: the app is locally signed and not notarized yet.
+]]></description>
+            <enclosure url="https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.4/vish-0.1.0-alpha.4.dmg" length="6184497" type="application/octet-stream" sparkle:edSignature="nOQqJ7ibdSYuYyRP6tlHfuiTNrE+qYfAm8qN0VkbML+htfEn7FByPtycit0ph80+WllE+X6sAO17z/AeIQfmBA=="/>
+        </item>
+    </channel>
+</rss>

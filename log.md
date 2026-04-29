@@ -719,6 +719,30 @@
 - Release app was relaunched for testing after the menu bar logo polish:
   `pid: 91276`
 
+## 2026-04-28 - Sparkle Update Flow
+
+- Replaced the missing-Sparkle-config developer alert with a manual GitHub Releases fallback for local/custom builds.
+- Wired release builds with a real Sparkle feed URL and EdDSA public key:
+  `https://raw.githubusercontent.com/itisrmk/VISH/main/appcast.xml`
+  `6ir0pzMbfSy/Jo73NC8GlOIRX2Rv5WjN3aZgfh9bmbk=`
+- Generated the local Sparkle EdDSA signing seed at the ignored path:
+  `resources/provisioning/sparkle_ed25519_private_key.txt`
+- Updated `scripts/release.sh` to inject Sparkle build settings, derive monotonic build versions for prereleases, generate a signed `appcast.xml`, and embed release notes directly in the appcast.
+- Built the alpha 4 DMG with Sparkle metadata:
+  `dist/vish-0.1.0-alpha.4.dmg`
+- Alpha 4 DMG checksum:
+  `9a162bea956869909fbc076a866b01eb8140e32fc627fcd005be4210fc006112`
+- Appcast validation passed:
+  `sparkle:version: 4`
+  `sparkle:edSignature: present`
+  `sparkle:releaseNotesLink: absent`
+- Release smoke benchmark passed after the Sparkle update flow:
+  `launch_to_pid_ms: 124`
+  `idle_rss_kb: 75632`
+  `idle_cpu_percent_average: 0.0`
+- Release app was relaunched for testing after the Sparkle update flow:
+  `pid: 96733`
+
 ### Known Gaps
 
 - Production Settings/onboarding still needs user screenshot review; build verification is not a visual approval.
@@ -727,6 +751,6 @@
 - Pull an embedding model such as `embeddinggemma` before measuring embedding budgets.
 - Install MemPalace from an official source before measuring memory search.
 - Frame-level signpost analysis in Instruments is still needed for hotkey-to-frame, keystroke-to-render, and Spotlight p95.
-- Sparkle appcast hosting/signing keys are not configured yet.
-- Full Developer ID signed and notarized release flow still requires real signing identity and `AC_PROFILE`; local archive/DMG creation has been verified.
+- Sparkle is wired with a signed appcast on GitHub raw hosting; production update hosting/automation still needs a final pass.
+- Full Developer ID signing and notarized release flow still requires a real signing identity and `AC_PROFILE`; local archive/DMG creation has been verified.
 - The worktree contains large legacy Rust deletions and untracked native Swift project files. Do not revert or restore those unless explicitly requested.

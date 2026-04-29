@@ -7,4 +7,5 @@
 /third-party/mlx_sidecar/.venv
 /third-party/mlx_sidecar/__pycache__
 /resources/provisioning/*.p12
+/resources/provisioning/sparkle_ed25519_private_key.txt
 *.log

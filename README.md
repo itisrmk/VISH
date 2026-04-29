@@ -91,14 +91,14 @@ Create a local DMG:
 scripts/release.sh 0.1.0
 ```
 
-Notarization runs only when `AC_PROFILE` is configured for `notarytool`.
+Release packaging also generates a signed Sparkle `appcast.xml` when the local ignored Sparkle signing key exists at `resources/provisioning/sparkle_ed25519_private_key.txt`. Notarization runs only when `AC_PROFILE` is configured for `notarytool`.
 
 ## Status
 
 This is an alpha build. The core launcher is usable, but release hardening is still in progress:
 
 - Developer ID notarization is not configured yet.
-- Sparkle appcast hosting is not configured yet.
+- Sparkle is wired to a signed appcast; production hosting/signing automation still needs a final pass.
 - Full VoiceOver verification is pending.
 - Final Instruments traces for hotkey, keystroke, and Spotlight p95 are pending.
 

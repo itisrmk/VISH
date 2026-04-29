@@ -2,9 +2,9 @@
   "schema_version": 1,
   "configuration": "Release",
   "arch": "arm64",
-  "build_ms": 15316,
-  "launch_to_pid_ms": 97,
-  "idle_rss_kb": 75520,
+  "build_ms": 16121,
+  "launch_to_pid_ms": 124,
+  "idle_rss_kb": 75632,
   "idle_cpu_percent_average": 0.0,
   "sample_seconds": 5,
   "settle_seconds": 3,
@@ -16,7 +16,7 @@
     "idle_rss": true,
     "idle_cpu_smoke": true
   },
-  "pid": 91276,
+  "pid": 96733,
   "app_path": "/Users/rahulkashyap/Library/Developer/Xcode/DerivedData/vish-duquzzmcndvilhawobowhzvastfp/Build/Products/Release/vish.app",
   "note": "Smoke benchmark. Frame-level budgets come from os_signpost intervals in subsystem com.vish.app category Performance."
 }

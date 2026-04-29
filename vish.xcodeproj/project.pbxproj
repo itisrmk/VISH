@@ -477,12 +477,14 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 4;
 				INFOPLIST_FILE = vish/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vish.app;
 				PRODUCT_NAME = vish;
 				SDKROOT = macosx;
@@ -490,8 +492,8 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "";
-				VISH_SPARKLE_FEED_URL = "";
-				VISH_SPARKLE_PUBLIC_ED_KEY = "";
+				VISH_SPARKLE_FEED_URL = "https://raw.githubusercontent.com/itisrmk/VISH/main/appcast.xml";
+				VISH_SPARKLE_PUBLIC_ED_KEY = "6ir0pzMbfSy/Jo73NC8GlOIRX2Rv5WjN3aZgfh9bmbk=";
 			};
 			name = Debug;
 		};
@@ -568,12 +570,14 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 4;
 				INFOPLIST_FILE = vish/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.vish.app;
 				PRODUCT_NAME = vish;
 				SDKROOT = macosx;
@@ -581,8 +585,8 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = "";
-				VISH_SPARKLE_FEED_URL = "";
-				VISH_SPARKLE_PUBLIC_ED_KEY = "";
+				VISH_SPARKLE_FEED_URL = "https://raw.githubusercontent.com/itisrmk/VISH/main/appcast.xml";
+				VISH_SPARKLE_PUBLIC_ED_KEY = "6ir0pzMbfSy/Jo73NC8GlOIRX2Rv5WjN3aZgfh9bmbk=";
 			};
 			name = Release;
 		};

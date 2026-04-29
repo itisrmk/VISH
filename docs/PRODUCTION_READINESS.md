@@ -34,4 +34,4 @@
 
 - Need a real Instruments trace for hotkey, keystroke, and Spotlight p95 before claiming all frame-level budgets.
 - Need full VoiceOver pass through launcher, Settings, and onboarding.
-- Need Developer ID credentials, notarized DMG, and hosted Sparkle appcast for true external distribution.
+- Need Developer ID credentials, notarized DMG, and production appcast hosting for true external distribution. Sparkle feed/key wiring and local signed appcast generation are in place.
