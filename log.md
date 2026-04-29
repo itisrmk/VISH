@@ -704,8 +704,16 @@
 - Added a small monochrome template logo drawn in AppKit so macOS tints it correctly in light/dark menu bars.
 - Debug build passed after the menu bar logo change:
   `xcodebuild -scheme vish -configuration Debug -destination 'platform=macOS,arch=arm64'`
-- Relaunched the Debug app for testing after the menu bar logo change:
-  `pid: 90807`
+- Built the alpha 3 DMG so the downloadable app includes the menu bar logo polish:
+  `dist/vish-0.1.0-alpha.3.dmg`
+- Alpha 3 DMG checksum:
+  `598bb57be966b9620588845b1db89874c0bcf0160a3411507ed219ae5b127d59`
+- Release smoke benchmark passed after the menu bar logo polish:
+  `launch_to_pid_ms: 97`
+  `idle_rss_kb: 75520`
+  `idle_cpu_percent_average: 0.0`
+- Release app was relaunched for testing after the menu bar logo polish:
+  `pid: 91276`
 
 ### Known Gaps
 
