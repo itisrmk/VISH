@@ -742,6 +742,10 @@
   `idle_cpu_percent_average: 0.0`
 - Release app was relaunched for testing after the Sparkle update flow:
   `pid: 96733`
+- Published GitHub prerelease:
+  `https://github.com/itisrmk/VISH/releases/tag/v0.1.0-alpha.4`
+- Direct DMG URL:
+  `https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.4/vish-0.1.0-alpha.4.dmg`
 
 ### Known Gaps
 
