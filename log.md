@@ -706,6 +706,10 @@
   `xcodebuild -scheme vish -configuration Debug -destination 'platform=macOS,arch=arm64'`
 - Built the alpha 3 DMG so the downloadable app includes the menu bar logo polish:
   `dist/vish-0.1.0-alpha.3.dmg`
+- Published GitHub prerelease:
+  `https://github.com/itisrmk/VISH/releases/tag/v0.1.0-alpha.3`
+- Direct DMG URL:
+  `https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.3/vish-0.1.0-alpha.3.dmg`
 - Alpha 3 DMG checksum:
   `598bb57be966b9620588845b1db89874c0bcf0160a3411507ed219ae5b127d59`
 - Release smoke benchmark passed after the menu bar logo polish:
