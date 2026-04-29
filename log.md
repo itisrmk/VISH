@@ -698,6 +698,15 @@
 - Alpha 2 DMG checksum:
   `aceff9e33133f5f7c291613ae2639155c3cb83912293b1717b307589cac4bb8d`
 
+## 2026-04-28 - Menu Bar Logo Polish
+
+- Replaced the macOS menu bar text item `v` with a fixed-width image-only status item.
+- Added a small monochrome template logo drawn in AppKit so macOS tints it correctly in light/dark menu bars.
+- Debug build passed after the menu bar logo change:
+  `xcodebuild -scheme vish -configuration Debug -destination 'platform=macOS,arch=arm64'`
+- Relaunched the Debug app for testing after the menu bar logo change:
+  `pid: 90807`
+
 ### Known Gaps
 
 - Production Settings/onboarding still needs user screenshot review; build verification is not a visual approval.
