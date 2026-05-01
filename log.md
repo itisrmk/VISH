@@ -747,6 +747,61 @@
 - Direct DMG URL:
   `https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.4/vish-0.1.0-alpha.4.dmg`
 
+## 2026-04-30 - Clipboard History V2 And Privacy Dashboard
+
+- Added Clipboard History v2 while keeping clipboard out of default search: pinned entries, retention pruning, source-app metadata, source-app exclusions, Settings edit/delete/clear controls, and Tab actions for Edit & Paste, Pin / Unpin, and Delete.
+- Clipboard storage remains compact and local:
+  `Application Support/vish/clipboard.plist`
+- Clipboard monitor still only runs when enabled, skips text above 50k characters, stores at most 100 entries, and now polls every 1.5 seconds with tolerance to reduce idle wakeups.
+- Added a Privacy Settings pane with local-only status for Accessibility, Full Disk visibility, Clipboard retention/counts, Local AI state, and Application Support data size/reveal action.
+- Updated Setup so Privacy is a first-class readiness card.
+- Regenerated the Xcode project after adding new Swift files:
+  `xcodegen generate`
+- Debug build passed after Clipboard v2 and Privacy dashboard:
+  `xcodebuild -scheme vish -configuration Debug -destination 'platform=macOS,arch=arm64'`
+- Release smoke benchmark passed with Clipboard History enabled:
+  `launch_to_pid_ms: 100`
+  `idle_rss_kb: 75872`
+  `idle_cpu_percent_average: 0.02`
+- Release app was relaunched for testing after Clipboard v2 and Privacy dashboard:
+  `pid: 58744`
+
+## 2026-04-30 - Dynamic File Search Folder Scope
+
+- Added VISH-level folder exclusions on top of macOS Full Disk Access. macOS still grants Full Disk as one permission, but VISH now lets users exclude common folders and custom folders from file search/indexing.
+- Settings > Files now has folder scope controls for Desktop, Documents, Downloads, Pictures, Movies, Music, User Apps, Shared, and External Volumes, plus an Add button for custom folder exclusions.
+- Exclusions apply across live Spotlight results, fallback filename indexing, semantic/vector candidates, vector cache pruning, and FSEvents watcher settings.
+- Changing folder scope marks the file index as needing a warm rebuild and prunes already-cached excluded file/vector records in the background.
+- Regenerated the Xcode project after adding `FileScopeSettingsModel`:
+  `xcodegen generate`
+- Debug build passed after dynamic folder scope:
+  `xcodebuild -scheme vish -configuration Debug -destination 'platform=macOS,arch=arm64'`
+- Release smoke benchmark passed after dynamic folder scope:
+  `launch_to_pid_ms: 109`
+  `idle_rss_kb: 75344`
+  `idle_cpu_percent_average: 0.0`
+- Release app was relaunched for testing after dynamic folder scope:
+  `pid: 73050`
+
+## 2026-04-30 - Alpha 5 Release Packaging
+
+- Added release notes for `v0.1.0-alpha.5` covering Clipboard History v2, Privacy dashboard, and dynamic file search folder exclusions.
+- Bumped Sparkle build metadata to `CURRENT_PROJECT_VERSION = 5` and regenerated the Xcode project.
+- Updated `scripts/release.sh` to prune stale appcast items by default for GitHub-tagged releases, avoiding old items being rewritten with the newest tag URL. Set `SPARKLE_APPCAST_KEEP_ALL=1` only when hosting all artifacts behind a stable shared URL prefix.
+- Built the alpha 5 DMG with Sparkle metadata:
+  `dist/vish-0.1.0-alpha.5.dmg`
+- Alpha 5 DMG checksum:
+  `65051b81a7cf3405885f928b50aacb09b464d44a55f6d8e9dc023ed208edfb98`
+- Alpha 5 Sparkle delta checksum from build 4:
+  `3406ad61de0f0a67341c4b28444499a475c402a7c6818255f8fee3f7ce5d170b`
+- Appcast validation passed:
+  `sparkle:version: 5`
+  `sparkle:edSignature: present`
+  `sparkle:releaseNotesLink: absent`
+  `items: alpha.5 only`
+- Release archive command passed through:
+  `scripts/release.sh 0.1.0-alpha.5`
+
 ### Known Gaps
 
 - Production Settings/onboarding still needs user screenshot review; build verification is not a visual approval.

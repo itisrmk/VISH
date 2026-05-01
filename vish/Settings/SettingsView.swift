@@ -11,12 +11,16 @@ struct SettingsView: View {
     @AppStorage(LauncherPreferences.fullDiskIndexingEnabledKey) private var fullDiskIndexingEnabled = false
     @AppStorage(LauncherPreferences.webSearchProviderKey) private var webSearchProvider = WebSearchProvider.google.rawValue
     @AppStorage(LauncherPreferences.clipboardHistoryEnabledKey) private var clipboardHistoryEnabled = false
+    @AppStorage(LauncherPreferences.clipboardRetentionDaysKey) private var clipboardRetentionDays = ClipboardRetentionOption.default.rawValue
     @AppStorage(LauncherPreferences.localAIEnabledKey) private var localAIEnabled = false
     @AppStorage(LauncherPreferences.localAIBaseURLKey) private var localAIBaseURL = LauncherPreferences.defaultLocalAIBaseURL
     @AppStorage(LauncherPreferences.localAIModelKey) private var localAIModel = ""
     @AppStorage(LauncherPreferences.localAIEmbeddingModelKey) private var localAIEmbeddingModel = ""
     @StateObject private var indexing = IndexingProgressModel()
     @StateObject private var localAI = LocalAISettingsModel()
+    @StateObject private var clipboard = ClipboardSettingsModel()
+    @StateObject private var fileScopes = FileScopeSettingsModel()
+    @StateObject private var privacy = PrivacyDashboardModel()
     @StateObject private var quicklinks = QuicklinkSettingsModel()
     @StateObject private var snippets = SnippetSettingsModel()
     @State private var pane = SettingsPane.setup
@@ -37,11 +41,14 @@ struct SettingsView: View {
             .padding(.top, 42)
             .padding(.bottom, 14)
         }
-        .frame(width: 680, height: 536)
+        .frame(width: 680, height: 580)
         .tint(SettingsSkin.blue)
         .toggleStyle(GlassSwitchStyle())
         .onAppear {
             refreshReadiness()
+            clipboard.refresh()
+            fileScopes.refresh()
+            privacy.refresh()
             indexing.update(enabled: fullDiskIndexingEnabled)
             if fullDiskIndexingEnabled, !indexing.hasCompleted {
                 indexing.start()
@@ -52,11 +59,21 @@ struct SettingsView: View {
             if enabled {
                 indexing.start()
             }
+            privacy.refresh()
+        }
+        .onChange(of: clipboardHistoryEnabled) { _, _ in
+            clipboard.refresh()
+            privacy.refresh()
+        }
+        .onChange(of: clipboardRetentionDays) { _, _ in
+            clipboard.refresh()
+            privacy.refresh()
         }
         .onChange(of: localAIEnabled) { _, enabled in
             if enabled {
                 localAI.refresh(baseURL: localAIBaseURL)
             }
+            privacy.refresh()
         }
     }
 
@@ -79,11 +96,14 @@ struct SettingsView: View {
             .padding(.horizontal, 10)
             .padding(.top, 8)
 
-            VStack(spacing: 6) {
-                ForEach(SettingsPane.allCases) { item in
-                    paneButton(item)
+            ScrollView {
+                VStack(spacing: 6) {
+                    ForEach(SettingsPane.allCases) { item in
+                        paneButton(item)
+                    }
                 }
             }
+            .scrollIndicators(.hidden)
 
             Spacer()
         }
@@ -113,6 +133,8 @@ struct SettingsView: View {
                     quicklinksPane
                 case .snippets:
                     snippetsPane
+                case .privacy:
+                    privacyPane
                 case .about:
                     aboutPane
                 case .help:
@@ -174,6 +196,13 @@ struct SettingsView: View {
                         state: aiSetupState,
                         action: "Open"
                     ) { pane = .ai }
+                    setupCard(
+                        "Privacy",
+                        subtitle: privacySetupSubtitle,
+                        symbol: "hand.raised",
+                        state: privacySetupState,
+                        action: "Review"
+                    ) { pane = .privacy }
                 }
 
                 surface {
@@ -285,62 +314,344 @@ struct SettingsView: View {
     }
 
     private var searchPane: some View {
-        VStack(spacing: 14) {
-            surface {
-                controlRow("Web") {
-                    Picker("Web provider", selection: $webSearchProvider) {
-                        ForEach(WebSearchProvider.allCases) { provider in
-                            Text(provider.displayName).tag(provider.rawValue)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(width: 220)
-                }
-                divider
-                controlRow("Clipboard") {
-                    HStack(spacing: 12) {
-                        Button("Access", action: openAccessibilitySettings)
-                            .buttonStyle(GlassButtonStyle())
-                        Button("Clear") {
-                            Task {
-                                await ClipboardHistoryStore.shared.clear()
+        ScrollView {
+            VStack(spacing: 14) {
+                surface {
+                    controlRow("Web") {
+                        Picker("Web provider", selection: $webSearchProvider) {
+                            ForEach(WebSearchProvider.allCases) { provider in
+                                Text(provider.displayName).tag(provider.rawValue)
                             }
                         }
-                        .disabled(!clipboardHistoryEnabled)
-                        .buttonStyle(GlassButtonStyle())
+                        .labelsHidden()
+                        .frame(width: 220)
+                    }
+                    divider
+                    tokenRow(["URL", "Math", "Quicklinks"])
+                }
+
+                surface {
+                    controlRow("Clipboard") {
                         Toggle("Clipboard", isOn: $clipboardHistoryEnabled)
                             .labelsHidden()
                     }
+                    divider
+                    controlRow("Keep") {
+                        Picker("Retention", selection: $clipboardRetentionDays) {
+                            ForEach(ClipboardRetentionOption.allCases) { option in
+                                Text(option.displayName).tag(option.rawValue)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 170)
+                        .disabled(!clipboardHistoryEnabled)
+                    }
+                    divider
+                    HStack(spacing: 10) {
+                        Button("Access", action: openAccessibilitySettings)
+                            .buttonStyle(GlassButtonStyle())
+                        Button("Clear Old", action: clipboard.clearUnpinned)
+                            .disabled(!clipboardHistoryEnabled || clipboard.stats.count == clipboard.stats.pinnedCount)
+                            .buttonStyle(GlassButtonStyle())
+                        Button("Clear All", action: clipboard.clearAll)
+                            .disabled(!clipboardHistoryEnabled || clipboard.stats.count == 0)
+                            .buttonStyle(GlassButtonStyle())
+                        Spacer()
+                        Text("\(clipboard.stats.count)/100")
+                            .font(.system(.callout, design: .monospaced).weight(.bold))
+                            .foregroundStyle(SettingsSkin.muted)
+                    }
                 }
-                divider
-                tokenRow(["URL", "Math", "Quicklinks"])
+
+                if clipboardHistoryEnabled {
+                    clipboardManager
+                }
+            }
+            .padding(.trailing, 6)
+        }
+        .scrollIndicators(.hidden)
+        .onAppear(perform: clipboard.refresh)
+    }
+
+    private var clipboardManager: some View {
+        VStack(spacing: 14) {
+            if let selected = clipboard.selectedItem {
+                surface {
+                    HStack(spacing: 10) {
+                        Text(selected.pinned ? "Pinned" : "Selected")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Button(selected.pinned ? "Unpin" : "Pin") {
+                            clipboard.togglePinned(selected)
+                        }
+                        .buttonStyle(GlassButtonStyle())
+                        Button("Ignore App", action: clipboard.ignoreSelectedSource)
+                            .disabled(selected.sourceBundleID == nil)
+                            .buttonStyle(GlassButtonStyle())
+                        Button("Delete") {
+                            clipboard.delete(selected)
+                        }
+                        .buttonStyle(GlassButtonStyle())
+                    }
+                    divider
+                    TextEditor(text: $clipboard.editText)
+                        .font(.system(.callout, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .scrollContentBackground(.hidden)
+                        .padding(8)
+                        .frame(height: 84)
+                        .background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    HStack {
+                        Text(selected.sourceName)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(SettingsSkin.muted)
+                            .lineLimit(1)
+                        Spacer()
+                        Button("Save Edit", action: clipboard.saveEdit)
+                            .disabled(!clipboard.canEdit)
+                            .buttonStyle(GlassButtonStyle())
+                    }
+                }
+            }
+
+            LazyVStack(spacing: 8) {
+                HStack {
+                    Text("History")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(SettingsSkin.muted)
+                        .textCase(.uppercase)
+                    Spacer()
+                    Text(clipboard.stats.byteSizeText)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(SettingsSkin.muted)
+                }
+                ForEach(clipboard.items) { item in
+                    clipboardButton(item)
+                }
+            }
+
+            if !clipboard.ignoredApps.isEmpty {
+                surface {
+                    HStack {
+                        Text("Ignored Apps")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        Spacer()
+                    }
+                    divider
+                    ForEach(clipboard.ignoredApps) { app in
+                        HStack(spacing: 10) {
+                            Text(app.name)
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                            Spacer()
+                            Button("Remove") {
+                                clipboard.removeIgnoredApp(app)
+                            }
+                            .buttonStyle(GlassButtonStyle())
+                        }
+                    }
+                }
             }
         }
     }
 
-    private var filesPane: some View {
-        VStack(spacing: 14) {
-            surface {
-                controlRow("Full disk") {
-                    Toggle("Full disk", isOn: $fullDiskIndexingEnabled)
-                        .labelsHidden()
-                }
-                divider
-                HStack(spacing: 10) {
-                    Button("Access", action: openFullDiskAccessSettings)
-                        .buttonStyle(GlassButtonStyle())
-                    Button("Reveal", action: revealApp)
-                        .buttonStyle(GlassButtonStyle())
-                    Spacer()
-                    Button(indexing.hasCompleted ? "Recheck" : "Warm") {
-                        indexing.start()
+    private var privacyPane: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                surface {
+                    HStack(spacing: 12) {
+                        privacyMetric("Mode", "Local")
+                        privacyMetric("Cloud AI", "Off")
+                        privacyMetric("Telemetry", "None")
                     }
-                    .disabled(indexing.isRunning || !fullDiskIndexingEnabled)
-                    .buttonStyle(GlassButtonStyle())
+                }
+
+                surface {
+                    privacyRow(
+                        "Accessibility",
+                        detail: privacy.accessibilityTrusted ? "Paste automation ready" : "Needed for auto-paste",
+                        symbol: "keyboard",
+                        state: privacy.accessibilityTrusted ? .ready : .action,
+                        button: "Open",
+                        action: openAccessibilitySettings
+                    )
+                    divider
+                    privacyRow(
+                        "Full Disk",
+                        detail: privacy.fullDiskVisible ? "Protected folders visible" : "Grant for full file search",
+                        symbol: "externaldrive",
+                        state: privacy.fullDiskVisible ? .ready : .action,
+                        button: "Open",
+                        action: openFullDiskAccessSettings
+                    )
+                    divider
+                    privacyRow(
+                        "Clipboard",
+                        detail: clipboardHistoryEnabled ? "\(privacy.clipboardStats.count) saved · \(privacy.clipboardStats.retentionText)" : "Off",
+                        symbol: "doc.on.clipboard",
+                        state: clipboardHistoryEnabled ? .ready : .optional,
+                        button: "Manage"
+                    ) { pane = .search }
+                    divider
+                    privacyRow(
+                        "Local AI",
+                        detail: localAIEnabled ? "Ollama at \(localAIBaseURL)" : "Off",
+                        symbol: "sparkle.magnifyingglass",
+                        state: localAIEnabled ? .ready : .optional,
+                        button: "Open"
+                    ) { pane = .ai }
+                }
+
+                surface {
+                    privacyRow(
+                        "Local Data",
+                        detail: "\(privacy.dataSizeText) in Application Support",
+                        symbol: "internaldrive",
+                        state: .ready,
+                        button: "Reveal",
+                        action: privacy.revealDataFolder
+                    )
+                    divider
+                    tokenRow(["clipboard.plist", "snippets.plist", "quicklinks.plist"])
                 }
             }
+            .padding(.trailing, 6)
+        }
+        .scrollIndicators(.hidden)
+        .onAppear {
+            clipboard.refresh()
+            privacy.refresh()
+        }
+    }
 
-            indexMeter
+    private var filesPane: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                surface {
+                    controlRow("Full disk") {
+                        Toggle("Full disk", isOn: $fullDiskIndexingEnabled)
+                            .labelsHidden()
+                    }
+                    divider
+                    HStack(spacing: 10) {
+                        Button("Access", action: openFullDiskAccessSettings)
+                            .buttonStyle(GlassButtonStyle())
+                        Button("Reveal", action: revealApp)
+                            .buttonStyle(GlassButtonStyle())
+                        Spacer()
+                        Button(indexing.hasCompleted ? "Recheck" : "Warm") {
+                            indexing.start()
+                        }
+                        .disabled(indexing.isRunning || !fullDiskIndexingEnabled)
+                        .buttonStyle(GlassButtonStyle())
+                    }
+                }
+
+                fileScopeSurface
+                indexMeter
+            }
+            .padding(.trailing, 6)
+        }
+        .scrollIndicators(.hidden)
+        .onAppear(perform: fileScopes.refresh)
+    }
+
+    private var fileScopeSurface: some View {
+        surface {
+            HStack(spacing: 10) {
+                Text("Folders")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Spacer()
+                Text(fileScopes.excludedCount == 0 ? "All included" : "\(fileScopes.excludedCount) excluded")
+                    .font(.system(.caption, design: .monospaced).weight(.bold))
+                    .foregroundStyle(SettingsSkin.muted)
+                Button("Add") {
+                    fileScopes.addCustomExclusion()
+                    indexing.update(enabled: fullDiskIndexingEnabled)
+                }
+                .buttonStyle(GlassButtonStyle())
+            }
+            divider
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(fileScopes.options) { option in
+                    fileScopeButton(option)
+                }
+            }
+            if !fileScopes.customExcludedPaths.isEmpty {
+                divider
+                ForEach(fileScopes.customExcludedPaths, id: \.self) { path in
+                    customExcludedFolderRow(path)
+                }
+            }
+        }
+    }
+
+    private func fileScopeButton(_ option: FileSearchFolderOption) -> some View {
+        let included = fileScopes.isIncluded(option)
+        return Button {
+            fileScopes.setIncluded(!included, option: option)
+            indexing.update(enabled: fullDiskIndexingEnabled)
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: option.symbol)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(included ? SettingsSkin.blue : SettingsSkin.muted)
+                    .frame(width: 26, height: 26)
+                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(option.title)
+                        .font(.callout.weight(.bold))
+                        .foregroundStyle(.white)
+                    Text(included ? "Included" : "Excluded")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SettingsSkin.muted)
+                }
+                Spacer()
+                Image(systemName: included ? "checkmark.circle.fill" : "minus.circle")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(included ? SettingsSkin.blue : SettingsSkin.muted)
+            }
+            .padding(10)
+            .background(.white.opacity(included ? 0.055 : 0.035), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .stroke(included ? SettingsSkin.stroke : SettingsSkin.muted.opacity(0.16), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func customExcludedFolderRow(_ path: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "folder.badge.minus")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(SettingsSkin.muted)
+                .frame(width: 28, height: 28)
+                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(URL(fileURLWithPath: path).lastPathComponent)
+                    .font(.callout.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text(path)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(SettingsSkin.muted)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Button("Reveal") {
+                fileScopes.reveal(path)
+            }
+            .buttonStyle(GlassButtonStyle())
+            Button("Remove") {
+                fileScopes.removeCustomExclusion(path)
+                indexing.update(enabled: fullDiskIndexingEnabled)
+            }
+            .buttonStyle(GlassButtonStyle())
         }
     }
 
@@ -674,7 +985,8 @@ struct SettingsView: View {
     private var filesSetupSubtitle: String {
         if !fullDiskIndexingEnabled { return "Home folders only" }
         if indexing.isRunning { return indexing.percentText }
-        return indexing.hasCompleted ? "Full disk index ready" : "Grant access and warm"
+        if !indexing.hasCompleted { return "Grant access and warm" }
+        return fileScopes.excludedCount == 0 ? "Full disk index ready" : "\(fileScopes.excludedCount) folder(s) excluded"
     }
 
     private var filesSetupAction: String {
@@ -702,6 +1014,16 @@ struct SettingsView: View {
         if localAI.isChecking { return "Checking Ollama" }
         if localAI.isInstallingChatModel || localAI.isInstallingEmbeddingModel { return "Installing \(localAI.installingModel)" }
         return localAI.models.isEmpty ? "Install or start Ollama" : localAI.status
+    }
+
+    private var privacySetupState: SetupState {
+        privacy.accessibilityTrusted && (!fullDiskIndexingEnabled || privacy.fullDiskVisible) ? .ready : .action
+    }
+
+    private var privacySetupSubtitle: String {
+        if !privacy.accessibilityTrusted { return "Accessibility pending" }
+        if fullDiskIndexingEnabled && !privacy.fullDiskVisible { return "Full Disk pending" }
+        return "Local data visible"
     }
 
     private var indexMeter: some View {
@@ -1031,6 +1353,85 @@ struct SettingsView: View {
         .buttonStyle(.plain)
     }
 
+    private func clipboardButton(_ item: ClipboardHistorySummary) -> some View {
+        Button {
+            clipboard.select(item)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: item.pinned ? "pin.fill" : "doc.on.clipboard")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(SettingsSkin.blue)
+                    .frame(width: 28, height: 28)
+                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(item.title)
+                        .font(.callout.weight(.bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text(item.subtitle)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(SettingsSkin.muted)
+                        .lineLimit(1)
+                }
+                Spacer()
+            }
+            .padding(12)
+            .background(
+                clipboard.selectedID == item.id ? .white.opacity(0.12) : .white.opacity(0.055),
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(clipboard.selectedID == item.id ? SettingsSkin.blue.opacity(0.45) : SettingsSkin.stroke, lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func privacyMetric(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(SettingsSkin.muted)
+            Text(value)
+                .font(.system(.callout, design: .monospaced).weight(.bold))
+                .foregroundStyle(.white)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func privacyRow(
+        _ title: String,
+        detail: String,
+        symbol: String,
+        state: SetupState,
+        button: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(SettingsSkin.blue)
+                .frame(width: 32, height: 32)
+                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Text(detail)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(SettingsSkin.muted)
+                    .lineLimit(1)
+            }
+            Spacer()
+            statusBadge(state)
+            Button(button, action: action)
+                .buttonStyle(GlassButtonStyle())
+        }
+    }
+
     private func openFullDiskAccessSettings() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") else { return }
         NSWorkspace.shared.open(url)
@@ -1051,6 +1452,9 @@ struct SettingsView: View {
 
     private func refreshReadiness() {
         accessibilityTrusted = AXIsProcessTrusted()
+        clipboard.refresh()
+        fileScopes.refresh()
+        privacy.refresh()
         if !indexing.isRunning {
             indexing.update(enabled: fullDiskIndexingEnabled)
         }
@@ -1068,6 +1472,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
     case ai
     case quicklinks
     case snippets
+    case privacy
     case about
     case help
 
@@ -1082,6 +1487,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
         case .ai: "AI"
         case .quicklinks: "Quicklinks"
         case .snippets: "Snippets"
+        case .privacy: "Privacy"
         case .about: "About"
         case .help: "Cheatsheet"
         }
@@ -1096,6 +1502,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
         case .ai: "sparkle.magnifyingglass"
         case .quicklinks: "link"
         case .snippets: "text.quote"
+        case .privacy: "hand.raised"
         case .about: "info.circle"
         case .help: "keyboard"
         }
@@ -1110,8 +1517,9 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
         case .ai: "5"
         case .quicklinks: "6"
         case .snippets: "7"
-        case .about: "8"
-        case .help: "9"
+        case .privacy: "8"
+        case .about: "9"
+        case .help: "0"
         }
     }
 }
@@ -1255,6 +1663,7 @@ private final class IndexingProgressModel: NSObject, ObservableObject {
     }
 
     func update(enabled: Bool) {
+        hasCompleted = LauncherPreferences.fullDiskWarmupCompleted
         guard enabled else {
             task?.cancel()
             isRunning = false

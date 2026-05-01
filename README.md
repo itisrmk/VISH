@@ -16,10 +16,11 @@ Open the DMG, drag `vish.app` to Applications, then launch it. macOS may show a 
 
 - Native macOS app built with Swift, AppKit, and SwiftUI only for Settings/onboarding.
 - Fast launcher panel with a prewarmed `NSPanel`; no web views, Electron, or background daemon.
-- App search, system actions, calculator, URL detection, Quicklinks, web search, file search, snippets, clipboard history, previews, and universal actions.
+- App search, system actions, calculator, URL detection, Quicklinks, web search, file search, snippets, Clipboard History v2, previews, and universal actions.
 - Local-only AI through Ollama, enabled explicitly by the user.
 - Semantic file finder for explicit `ai find ...` queries using VISH file indexing plus local embeddings when configured.
 - Privacy-first design: no telemetry, no cloud AI, no default background disk summarization.
+- Settings includes a Privacy dashboard for permissions, local data, clipboard retention, and local AI state.
 
 ## Core Commands
 
@@ -45,10 +46,10 @@ Open the DMG, drag `vish.app` to Applications, then launch it. macOS may show a 
 VISH works without granting everything up front.
 
 - Accessibility is only needed for paste automation from snippets and clipboard history.
-- Full Disk Access is only needed when you enable full-computer file indexing.
+- Full Disk Access is only needed when you enable full-computer file indexing; VISH can still exclude folders like Downloads, Documents, or custom paths.
 - Local AI requires a local Ollama server and an installed model.
 
-Settings includes a Setup pane that shows readiness for Launcher, Files, Clipboard, and AI.
+Settings includes a Setup pane that shows readiness for Launcher, Files, Clipboard, AI, and Privacy.
 
 ## Performance Targets
 

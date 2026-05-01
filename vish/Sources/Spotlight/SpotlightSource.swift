@@ -249,6 +249,7 @@ private final class SpotlightQueryRunner: NSObject {
     private func isAllowed(_ path: String) -> Bool {
         let hidden = path.split(separator: "/").contains { $0.hasPrefix(".") }
         guard !hidden else { return false }
+        guard !LauncherPreferences.isFileSearchPathExcluded(path) else { return false }
         guard !request.includeFullDisk else { return true }
 
         let excludedPrefixes = [
@@ -326,6 +327,7 @@ actor FileIndexStore {
         for recordIndex in candidateIndexes {
             let record = snapshot[recordIndex]
             guard request.typeFilter.accepts(record.kind) else { continue }
+            guard !LauncherPreferences.isFileSearchPathExcluded(record.path) else { continue }
             guard request.includeFullDisk || Self.isUserScopePath(record.path) else { continue }
             let score: Double?
             if record.searchName.hasPrefix(query) {
@@ -376,6 +378,7 @@ actor FileIndexStore {
 
         for record in sourceRecords {
             guard typeFilter.accepts(record.kind) else { continue }
+            guard !LauncherPreferences.isFileSearchPathExcluded(record.path) else { continue }
             guard includeFullDisk || Self.isUserScopePath(record.path) else { continue }
             if let requiredPathExtension {
                 guard record.name.lowercased().hasSuffix(".\(requiredPathExtension.lowercased())") else { continue }
@@ -443,6 +446,7 @@ actor FileIndexStore {
             }
 
             guard FileManager.default.fileExists(atPath: path) else { continue }
+            guard !LauncherPreferences.isFileSearchPathExcluded(path) else { continue }
             let fresh = FileIndexScanner.records(forChangedPath: path)
             guard !fresh.isEmpty else { continue }
             if fresh.count > FileIndexScanner.changedPathRecordLimit {
@@ -468,6 +472,7 @@ actor FileIndexStore {
         let snapshot = records ?? load()
         return snapshot.compactMap { record in
             guard Self.isVectorIndexable(record) else { return nil }
+            guard !LauncherPreferences.isFileSearchPathExcluded(record.path) else { return nil }
             guard includeFullDisk || Self.isUserScopePath(record.path) else { return nil }
             return FileVectorCandidate(path: record.path, title: record.name, modifiedAt: record.modifiedAt)
         }
@@ -507,11 +512,24 @@ actor FileIndexStore {
         try? StorageCodec.save(records, to: indexURL)
     }
 
+    func applyCurrentExclusions() async {
+        var snapshot = records ?? load()
+        let oldCount = snapshot.count
+        snapshot.removeAll { LauncherPreferences.isFileSearchPathExcluded($0.path) }
+        guard snapshot.count != oldCount else { return }
+        records = snapshot
+        index = FileRecordIndex(records: snapshot)
+        progress = FileIndexProgress(scannedCount: snapshot.count, indexedCount: snapshot.count, rootPath: "", isFinished: true)
+        save(snapshot)
+        await SemanticVectorIndexStore.shared.pruneExcludedPaths()
+    }
+
     private func setProgress(_ progress: FileIndexProgress) {
         self.progress = progress
     }
 
     private static func isUserScopePath(_ path: String) -> Bool {
+        guard !LauncherPreferences.isFileSearchPathExcluded(path) else { return false }
         let excludedPrefixes = [
             "/System/",
             "/Library/",
@@ -660,6 +678,7 @@ private enum FileIndexScanner {
         records.reserveCapacity(64_000)
 
         for root in roots(includeFullDisk: includeFullDisk) {
+            guard !LauncherPreferences.isFileSearchPathExcluded(root.path) else { continue }
             await progress?(FileIndexProgress(
                 scannedCount: scannedCount,
                 indexedCount: records.count,
@@ -683,7 +702,7 @@ private enum FileIndexScanner {
                 let values = try? url.resourceValues(forKeys: keys)
 
                 if values?.isDirectory == true {
-                    if shouldSkipDirectory(url) {
+                    if shouldSkipDirectory(url) || LauncherPreferences.isFileSearchPathExcluded(url.path) {
                         enumerator.skipDescendants()
                         continue
                     }
@@ -728,6 +747,7 @@ private enum FileIndexScanner {
     static func records(forChangedPath path: String) -> [FileRecord] {
         let url = URL(fileURLWithPath: path)
         let values = try? url.resourceValues(forKeys: keys)
+        guard !LauncherPreferences.isFileSearchPathExcluded(url.path) else { return [] }
         guard values?.isHidden != true, !url.lastPathComponent.hasPrefix(".") else { return [] }
         guard let root = FileRecord(url: url, values: values) else { return [] }
         guard values?.isDirectory == true, values?.isPackage != true, !shouldSkipDirectory(url) else {
@@ -745,7 +765,7 @@ private enum FileIndexScanner {
         while let child = enumerator.nextObject() as? URL {
             let childValues = try? child.resourceValues(forKeys: keys)
             if childValues?.isDirectory == true {
-                if shouldSkipDirectory(child) {
+                if shouldSkipDirectory(child) || LauncherPreferences.isFileSearchPathExcluded(child.path) {
                     enumerator.skipDescendants()
                     continue
                 }
@@ -764,18 +784,20 @@ private enum FileIndexScanner {
 
     fileprivate static func roots(includeFullDisk: Bool) -> [URL] {
         let home = FileManager.default.homeDirectoryForCurrentUser
+        let roots: [URL]
         if includeFullDisk {
-            return [
+            roots = [
                 home,
                 URL(fileURLWithPath: "/Applications", isDirectory: true),
                 URL(fileURLWithPath: "/System/Applications", isDirectory: true),
                 URL(fileURLWithPath: "/Users/Shared", isDirectory: true),
                 URL(fileURLWithPath: "/Volumes", isDirectory: true)
             ]
+        } else {
+            roots = ["Desktop", "Documents", "Downloads", "Applications", "Pictures", "Movies", "Music"]
+                .map { home.appendingPathComponent($0, isDirectory: true) }
         }
-
-        return ["Desktop", "Documents", "Downloads", "Applications", "Pictures", "Movies", "Music"]
-            .map { home.appendingPathComponent($0, isDirectory: true) }
+        return roots.filter { !LauncherPreferences.isFileSearchPathExcluded($0.path) }
     }
 
     private static func shouldSkipDirectory(_ url: URL) -> Bool {
@@ -897,11 +919,13 @@ final class FileIndexWatcher {
     private struct WatcherSettings: Equatable {
         let fullDiskIndexingEnabled: Bool
         let fullDiskWarmupCompleted: Bool
+        let excludedPathSignature: String
 
         static var current: Self {
             WatcherSettings(
                 fullDiskIndexingEnabled: LauncherPreferences.fullDiskIndexingEnabled,
-                fullDiskWarmupCompleted: LauncherPreferences.fullDiskWarmupCompleted
+                fullDiskWarmupCompleted: LauncherPreferences.fullDiskWarmupCompleted,
+                excludedPathSignature: LauncherPreferences.fileSearchExcludedPaths.joined(separator: "\n")
             )
         }
     }

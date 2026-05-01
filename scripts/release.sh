@@ -120,6 +120,13 @@ if [[ "$sparkle_disabled" != "1" && "${SPARKLE_GENERATE_APPCAST:-1}" != "0" ]]; 
   appcast_command+=("$appcast_dir")
   "${appcast_command[@]}"
 
+  if [[ "${SPARKLE_APPCAST_KEEP_ALL:-0}" != "1" && -f "$appcast_dir/appcast.xml" ]]; then
+    perl -0pi -e '
+      BEGIN { $target = shift @ARGV; }
+      s{(\n\s*<item>\s*(?:(?!</item>).)*?<sparkle:version>([^<]+)</sparkle:version>(?:(?!</item>).)*?</item>)}{$2 eq $target ? $1 : ""}gse;
+    ' "$build_version" "$appcast_dir/appcast.xml"
+  fi
+
   if [[ -n "$appcast_output" && -f "$appcast_dir/appcast.xml" ]]; then
     cp "$appcast_dir/appcast.xml" "$appcast_output"
   fi

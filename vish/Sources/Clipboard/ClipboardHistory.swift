@@ -21,21 +21,28 @@ actor ClipboardHistoryStore {
             .appendingPathComponent("clipboard.plist")
     }
 
-    func record(_ value: String) {
+    func record(_ value: String, source: ClipboardCaptureSource? = nil) {
         guard let text = ClipboardHistoryItem.clean(value) else { return }
         let id = ClipboardHistoryItem.id(for: text)
-        var current = loadItems().filter { $0.id != id }
-        current.insert(.init(id: id, text: text, copiedAt: Date()), at: 0)
-        if current.count > ClipboardHistoryItem.maxItems {
-            current.removeSubrange(ClipboardHistoryItem.maxItems..<current.count)
-        }
-        items = current
-        try? StorageCodec.save(current, to: historyURL)
+        let now = Date()
+        var current = normalizedItems()
+        let existing = current.first { $0.id == id }
+        current.removeAll { $0.id == id }
+        current.append(.init(
+            id: id,
+            text: text,
+            copiedAt: now,
+            updatedAt: existing?.updatedAt ?? now,
+            pinned: existing?.pinned ?? false,
+            sourceBundleID: source?.bundleID ?? existing?.sourceBundleID,
+            sourceName: source?.name ?? existing?.sourceName
+        ))
+        persist(sortedAndTrimmed(current))
     }
 
     func search(_ query: String, limit: Int) -> [SearchResult] {
         let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let current = loadItems()
+        let current = normalizedItems()
         guard !current.isEmpty else { return [] }
 
         var results: [SearchResult] = []
@@ -57,6 +64,7 @@ actor ClipboardHistoryStore {
                 title: item.title,
                 subtitle: item.subtitle,
                 score: score,
+                icon: item.pinned ? .symbol("pin.fill") : nil,
                 action: .pasteClipboard(item.text)
             ))
         }
@@ -70,6 +78,65 @@ actor ClipboardHistoryStore {
         try? FileManager.default.removeItem(at: historyURL)
     }
 
+    func clearUnpinned() {
+        persist(normalizedItems().filter(\.pinned))
+    }
+
+    func delete(id: String) {
+        persist(normalizedItems().filter { $0.id != id })
+    }
+
+    func setPinned(id: String, pinned: Bool) {
+        persist(sortedAndTrimmed(normalizedItems().map { item in
+            guard item.id == id else { return item }
+            return item.withPinned(pinned)
+        }))
+    }
+
+    func togglePinned(id: String) {
+        persist(sortedAndTrimmed(normalizedItems().map { item in
+            guard item.id == id else { return item }
+            return item.withPinned(!item.pinned)
+        }))
+    }
+
+    func update(id: String, text: String) {
+        guard let cleaned = ClipboardHistoryItem.clean(text) else { return }
+        let newID = ClipboardHistoryItem.id(for: cleaned)
+        let now = Date()
+        var current = normalizedItems()
+        guard let old = current.first(where: { $0.id == id }) else { return }
+        current.removeAll { $0.id == id || $0.id == newID }
+        current.append(.init(
+            id: newID,
+            text: cleaned,
+            copiedAt: old.copiedAt,
+            updatedAt: now,
+            pinned: old.pinned,
+            sourceBundleID: old.sourceBundleID,
+            sourceName: old.sourceName
+        ))
+        persist(sortedAndTrimmed(current))
+    }
+
+    func summaries(limit: Int = 40) -> [ClipboardHistorySummary] {
+        normalizedItems().prefix(limit).map(\.summary)
+    }
+
+    func stats() -> ClipboardHistoryStats {
+        let current = normalizedItems()
+        let attributes = try? FileManager.default.attributesOfItem(atPath: historyURL.path)
+        let byteSize = attributes?[.size] as? Int64 ?? 0
+        return ClipboardHistoryStats(
+            count: current.count,
+            pinnedCount: current.filter(\.pinned).count,
+            byteSize: byteSize,
+            retentionDays: LauncherPreferences.clipboardRetentionDays,
+            lastCopiedAt: current.first?.copiedAt,
+            historyPath: historyURL.path
+        )
+    }
+
     private func loadItems() -> [ClipboardHistoryItem] {
         if let items {
             return items
@@ -78,6 +145,42 @@ actor ClipboardHistoryStore {
         let loaded = StorageCodec.load([ClipboardHistoryItem].self, from: historyURL, default: [])
         items = loaded
         return loaded
+    }
+
+    private func normalizedItems() -> [ClipboardHistoryItem] {
+        let current = loadItems()
+        let normalized = sortedAndTrimmed(pruneExpired(current))
+        if normalized != current {
+            persist(normalized)
+        }
+        return normalized
+    }
+
+    private func pruneExpired(_ current: [ClipboardHistoryItem]) -> [ClipboardHistoryItem] {
+        let days = LauncherPreferences.clipboardRetentionDays
+        guard days > 0 else { return current }
+        let cutoff = Date().addingTimeInterval(-Double(days) * 86_400)
+        return current.filter { $0.pinned || $0.copiedAt >= cutoff }
+    }
+
+    private func sortedAndTrimmed(_ current: [ClipboardHistoryItem]) -> [ClipboardHistoryItem] {
+        var sorted = current.sorted { left, right in
+            if left.pinned != right.pinned { return left.pinned }
+            return left.copiedAt > right.copiedAt
+        }
+        if sorted.count > ClipboardHistoryItem.maxItems {
+            sorted.removeSubrange(ClipboardHistoryItem.maxItems..<sorted.count)
+        }
+        return sorted
+    }
+
+    private func persist(_ current: [ClipboardHistoryItem]) {
+        items = current
+        if current.isEmpty {
+            try? FileManager.default.removeItem(at: historyURL)
+        } else {
+            try? StorageCodec.save(current, to: historyURL)
+        }
     }
 }
 
@@ -111,12 +214,12 @@ final class ClipboardHistoryMonitor {
         lastChangeCount = NSPasteboard.general.changeCount
         captureCurrentPasteboard()
 
-        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1.5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.pollPasteboard()
             }
         }
-        timer.tolerance = 0.5
+        timer.tolerance = 0.75
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
@@ -134,24 +237,115 @@ final class ClipboardHistoryMonitor {
     }
 
     private func captureCurrentPasteboard() {
+        let sourceApp = NSWorkspace.shared.frontmostApplication
+        let bundleID = sourceApp?.bundleIdentifier
+        if let bundleID, LauncherPreferences.clipboardDisabledAppIDs.contains(bundleID) {
+            return
+        }
         guard let value = NSPasteboard.general.string(forType: .string) else { return }
         let store = store
+        let source = ClipboardCaptureSource(bundleID: bundleID, name: sourceApp?.localizedName)
         Task.detached(priority: .utility) {
-            await store.record(value)
+            await store.record(value, source: source)
         }
     }
 }
 
-private struct ClipboardHistoryItem: Codable, Sendable, Identifiable {
+struct ClipboardCaptureSource: Sendable {
+    let bundleID: String?
+    let name: String?
+}
+
+struct ClipboardHistorySummary: Identifiable, Sendable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let text: String
+    let pinned: Bool
+    let sourceBundleID: String?
+    let sourceName: String
+    let copiedAt: Date
+}
+
+struct ClipboardHistoryStats: Sendable {
+    static let empty = ClipboardHistoryStats(
+        count: 0,
+        pinnedCount: 0,
+        byteSize: 0,
+        retentionDays: ClipboardRetentionOption.default.rawValue,
+        lastCopiedAt: nil,
+        historyPath: ""
+    )
+
+    let count: Int
+    let pinnedCount: Int
+    let byteSize: Int64
+    let retentionDays: Int
+    let lastCopiedAt: Date?
+    let historyPath: String
+
+    var byteSizeText: String {
+        ByteCountFormatter.string(fromByteCount: byteSize, countStyle: .file)
+    }
+
+    var retentionText: String {
+        ClipboardRetentionOption(rawValue: retentionDays)?.displayName ?? ClipboardRetentionOption.default.displayName
+    }
+}
+
+private struct ClipboardHistoryItem: Codable, Sendable, Identifiable, Equatable {
     static let maxItems = 100
     private static let maxCharacters = 50_000
 
     let id: String
     let text: String
     let copiedAt: Date
+    let updatedAt: Date
+    let pinned: Bool
+    let sourceBundleID: String?
+    let sourceName: String?
+
+    init(
+        id: String,
+        text: String,
+        copiedAt: Date,
+        updatedAt: Date,
+        pinned: Bool,
+        sourceBundleID: String?,
+        sourceName: String?
+    ) {
+        self.id = id
+        self.text = text
+        self.copiedAt = copiedAt
+        self.updatedAt = updatedAt
+        self.pinned = pinned
+        self.sourceBundleID = sourceBundleID
+        self.sourceName = sourceName
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case text
+        case copiedAt
+        case updatedAt
+        case pinned
+        case sourceBundleID
+        case sourceName
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        text = try container.decode(String.self, forKey: .text)
+        copiedAt = try container.decode(Date.self, forKey: .copiedAt)
+        updatedAt = (try? container.decode(Date.self, forKey: .updatedAt)) ?? copiedAt
+        pinned = (try? container.decode(Bool.self, forKey: .pinned)) ?? false
+        sourceBundleID = try? container.decode(String.self, forKey: .sourceBundleID)
+        sourceName = try? container.decode(String.self, forKey: .sourceName)
+    }
 
     var searchText: String {
-        text.lowercased()
+        "\(text) \(sourceName ?? "")".lowercased()
     }
 
     var title: String {
@@ -163,7 +357,21 @@ private struct ClipboardHistoryItem: Codable, Sendable, Identifiable {
     var subtitle: String {
         let lineCount = text.reduce(1) { $1.isNewline ? $0 + 1 : $0 }
         let size = lineCount > 1 ? "\(lineCount) lines" : "\(text.count) chars"
-        return "\(size) - \(ageText)"
+        let source = sourceName.map { " · \($0)" } ?? ""
+        return "\(pinned ? "Pinned · " : "")\(size) · \(ageText)\(source)"
+    }
+
+    var summary: ClipboardHistorySummary {
+        ClipboardHistorySummary(
+            id: id,
+            title: title,
+            subtitle: subtitle,
+            text: text,
+            pinned: pinned,
+            sourceBundleID: sourceBundleID,
+            sourceName: sourceName ?? "Unknown app",
+            copiedAt: copiedAt
+        )
     }
 
     static func clean(_ value: String) -> String? {
@@ -180,6 +388,18 @@ private struct ClipboardHistoryItem: Codable, Sendable, Identifiable {
             hash &*= 1_099_511_628_211
         }
         return String(hash, radix: 16)
+    }
+
+    func withPinned(_ value: Bool) -> ClipboardHistoryItem {
+        ClipboardHistoryItem(
+            id: id,
+            text: text,
+            copiedAt: copiedAt,
+            updatedAt: Date(),
+            pinned: value,
+            sourceBundleID: sourceBundleID,
+            sourceName: sourceName
+        )
     }
 
     private var flattened: String {

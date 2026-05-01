@@ -135,6 +135,29 @@ enum ResultActionExecutor {
         NSPasteboard.general.setString(value, forType: .string)
     }
 
+    static func editAndPasteClipboard(_ value: String) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Edit Clipboard"
+        alert.informativeText = "Adjust the text before pasting."
+        alert.addButton(withTitle: "Paste")
+        alert.addButton(withTitle: "Cancel")
+
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 420, height: 150))
+        scrollView.hasVerticalScroller = true
+        scrollView.drawsBackground = false
+        let textView = NSTextView(frame: scrollView.bounds)
+        textView.string = value
+        textView.font = .systemFont(ofSize: 13)
+        textView.isRichText = false
+        textView.usesAdaptiveColorMappingForDarkAppearance = true
+        scrollView.documentView = textView
+        alert.accessoryView = scrollView
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        pasteClipboard(textView.string)
+    }
+
     private static func askAI(_ prompt: String) {
         guard LauncherPreferences.localAIEnabled else {
             NSApp.activate(ignoringOtherApps: true)

@@ -12,8 +12,12 @@ enum LauncherPreferences {
     static let fullDiskIndexingEnabledKey = "indexing.fullDiskEnabled"
     static let fullDiskWarmupCompletedKey = "indexing.fullDiskFileCatalogCompleted"
     static let fileIndexLastEventIDKey = "indexing.fileCatalogLastFSEventID"
+    static let fileSearchExcludedFolderIDsKey = "indexing.excludedFolderIDs"
+    static let fileSearchCustomExcludedPathsKey = "indexing.customExcludedPaths"
     static let webSearchProviderKey = "search.webProvider"
     static let clipboardHistoryEnabledKey = "clipboard.historyEnabled"
+    static let clipboardRetentionDaysKey = "clipboard.retentionDays"
+    static let clipboardDisabledAppIDsKey = "clipboard.disabledAppIDs"
     static let localAIEnabledKey = "ai.localEnabled"
     static let localAIBaseURLKey = "ai.ollamaBaseURL"
     static let localAIModelKey = "ai.model"
@@ -116,6 +120,38 @@ enum LauncherPreferences {
         }
     }
 
+    static var fileSearchExcludedFolderIDs: [String] {
+        get {
+            UserDefaults.standard.stringArray(forKey: fileSearchExcludedFolderIDsKey) ?? []
+        }
+        set {
+            UserDefaults.standard.set(normalizedStrings(newValue), forKey: fileSearchExcludedFolderIDsKey)
+        }
+    }
+
+    static var fileSearchCustomExcludedPaths: [String] {
+        get {
+            UserDefaults.standard.stringArray(forKey: fileSearchCustomExcludedPathsKey) ?? []
+        }
+        set {
+            UserDefaults.standard.set(normalizedPaths(newValue), forKey: fileSearchCustomExcludedPathsKey)
+        }
+    }
+
+    static var fileSearchExcludedPaths: [String] {
+        let defaultPaths = FileSearchFolderOption.defaultOptions
+            .filter { fileSearchExcludedFolderIDs.contains($0.id) }
+            .map(\.path)
+        return normalizedPaths(defaultPaths + fileSearchCustomExcludedPaths)
+    }
+
+    static func isFileSearchPathExcluded(_ path: String) -> Bool {
+        let normalized = normalizedPath(path)
+        return fileSearchExcludedPaths.contains { excluded in
+            normalized == excluded || normalized.hasPrefix("\(excluded)/")
+        }
+    }
+
     static var webSearchProvider: WebSearchProvider {
         get {
             WebSearchProvider(rawValue: UserDefaults.standard.string(forKey: webSearchProviderKey) ?? "") ?? .google
@@ -125,12 +161,52 @@ enum LauncherPreferences {
         }
     }
 
+    private static func normalizedStrings(_ values: [String]) -> [String] {
+        Array(Set(values.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }))
+            .sorted()
+    }
+
+    private static func normalizedPaths(_ values: [String]) -> [String] {
+        Array(Set(values.map(normalizedPath).filter { !$0.isEmpty }))
+            .sorted()
+    }
+
+    private static func normalizedPath(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let expanded = (trimmed as NSString).expandingTildeInPath
+        return URL(fileURLWithPath: expanded).standardizedFileURL.path
+    }
+
     static var clipboardHistoryEnabled: Bool {
         get {
             UserDefaults.standard.object(forKey: clipboardHistoryEnabledKey) as? Bool ?? false
         }
         set {
             UserDefaults.standard.set(newValue, forKey: clipboardHistoryEnabledKey)
+        }
+    }
+
+    static var clipboardRetentionDays: Int {
+        get {
+            let value = UserDefaults.standard.object(forKey: clipboardRetentionDaysKey) as? Int
+                ?? ClipboardRetentionOption.default.rawValue
+            return ClipboardRetentionOption(rawValue: value)?.rawValue ?? ClipboardRetentionOption.default.rawValue
+        }
+        set {
+            let normalized = ClipboardRetentionOption(rawValue: newValue)?.rawValue ?? ClipboardRetentionOption.default.rawValue
+            UserDefaults.standard.set(normalized, forKey: clipboardRetentionDaysKey)
+        }
+    }
+
+    static var clipboardDisabledAppIDs: [String] {
+        get {
+            UserDefaults.standard.stringArray(forKey: clipboardDisabledAppIDsKey) ?? []
+        }
+        set {
+            let values = Array(Set(newValue.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }))
+                .sorted()
+            UserDefaults.standard.set(values, forKey: clipboardDisabledAppIDsKey)
         }
     }
 
@@ -177,6 +253,54 @@ enum LauncherPreferences {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: onboardingCompletedKey)
+        }
+    }
+}
+
+struct FileSearchFolderOption: Identifiable, Hashable, Sendable {
+    let id: String
+    let title: String
+    let symbol: String
+    let path: String
+
+    static var defaultOptions: [FileSearchFolderOption] {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return [
+            option("desktop", "Desktop", "desktopcomputer", home.appendingPathComponent("Desktop", isDirectory: true)),
+            option("documents", "Documents", "doc.text", home.appendingPathComponent("Documents", isDirectory: true)),
+            option("downloads", "Downloads", "arrow.down.circle", home.appendingPathComponent("Downloads", isDirectory: true)),
+            option("pictures", "Pictures", "photo", home.appendingPathComponent("Pictures", isDirectory: true)),
+            option("movies", "Movies", "film", home.appendingPathComponent("Movies", isDirectory: true)),
+            option("music", "Music", "music.note", home.appendingPathComponent("Music", isDirectory: true)),
+            option("home-applications", "User Apps", "app", home.appendingPathComponent("Applications", isDirectory: true)),
+            option("shared", "Shared", "person.2", URL(fileURLWithPath: "/Users/Shared", isDirectory: true)),
+            option("volumes", "External Volumes", "externaldrive", URL(fileURLWithPath: "/Volumes", isDirectory: true))
+        ]
+    }
+
+    private static func option(_ id: String, _ title: String, _ symbol: String, _ url: URL) -> FileSearchFolderOption {
+        FileSearchFolderOption(id: id, title: title, symbol: symbol, path: url.standardizedFileURL.path)
+    }
+}
+
+enum ClipboardRetentionOption: Int, CaseIterable, Identifiable {
+    case oneDay = 1
+    case oneWeek = 7
+    case oneMonth = 30
+    case threeMonths = 90
+    case forever = 0
+
+    static let `default` = ClipboardRetentionOption.oneMonth
+
+    var id: Int { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .oneDay: "1 day"
+        case .oneWeek: "7 days"
+        case .oneMonth: "30 days"
+        case .threeMonths: "90 days"
+        case .forever: "Forever"
         }
     }
 }

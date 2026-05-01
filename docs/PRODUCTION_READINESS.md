@@ -5,8 +5,9 @@
 - First launch shows onboarding only after `ColdLaunchReady`; it must never block the menu bar item or launcher prewarm.
 - Onboarding has four steps: value, permissions, feature defaults, ready. Every step must be skippable or finishable without granting optional permissions.
 - Settings opens lazily and starts no launcher-hot-path work. Ollama checks happen only from Settings or explicit AI use.
-- The Settings Setup pane is the source of user-facing readiness: Launcher, Files, Clipboard, AI. Each card must show one status and one next action.
+- The Settings Setup pane is the source of user-facing readiness: Launcher, Files, Clipboard, AI, and Privacy. Each card must show one status and one next action.
 - Optional features remain trigger-based: files through file commands, clipboard through `clip` / `clipboard`, snippets through `;`, AI through `ai` / `?` / Tab actions.
+- Full Disk Access is an OS permission; folder-level control is handled by VISH exclusions in Settings > Files and must apply to Spotlight, fallback catalog, semantic vectors, and file watcher paths.
 
 ## Performance Gates
 

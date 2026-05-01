@@ -4,22 +4,26 @@
         <title>vish</title>
         <item>
             <title>0.1.0</title>
-            <pubDate>Tue, 28 Apr 2026 18:59:12 -0700</pubDate>
-            <sparkle:version>4</sparkle:version>
+            <pubDate>Thu, 30 Apr 2026 22:44:28 -0700</pubDate>
+            <sparkle:version>5</sparkle:version>
             <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# VISH 0.1.0 Alpha 4
+            <description sparkle:format="markdown"><![CDATA[# VISH 0.1.0 Alpha 5
 
-This alpha fixes the update flow.
+This alpha adds richer local controls for clipboard, privacy, and file indexing.
 
-- Sparkle builds now ship with a real feed URL and EdDSA public key.
-- The app uses Sparkle for update checks when configured.
-- Local or custom builds without Sparkle config now open GitHub Releases instead of showing developer environment variables.
-- Release packaging now generates a signed `appcast.xml` with monotonic Sparkle build versions.
+- Clipboard History v2 adds pinned entries, retention controls, source-app metadata, ignored source apps, edit/delete/clear controls, and Tab actions for Edit & Paste, Pin / Unpin, and Delete.
+- Settings now includes a Privacy dashboard for Accessibility, Full Disk visibility, Clipboard state, Local AI state, and local Application Support data.
+- Full Disk file search now has VISH-level folder exclusions for common folders plus custom excluded folders.
+- Folder exclusions apply to Spotlight results, fallback filename indexing, semantic/vector search, vector cache pruning, and file watcher paths.
+- Release metadata now uses Sparkle build version 5.
 
 Still alpha: the app is locally signed and not notarized yet.
 ]]></description>
-            <enclosure url="https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.4/vish-0.1.0-alpha.4.dmg" length="6184497" type="application/octet-stream" sparkle:edSignature="nOQqJ7ibdSYuYyRP6tlHfuiTNrE+qYfAm8qN0VkbML+htfEn7FByPtycit0ph80+WllE+X6sAO17z/AeIQfmBA=="/>
+            <enclosure url="https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.5/vish-0.1.0-alpha.5.dmg" length="6431008" type="application/octet-stream" sparkle:edSignature="E9sr9rnYrdJn82zgsf9uDYjFQDDks7bpC6R6EWJvae859FuhGN31GMvRb/m/bZ27UywBkpT174mR7wxjn3MmBQ=="/>
+            <sparkle:deltas>
+                <enclosure url="https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.5/vish5-4.delta" sparkle:deltaFrom="4" length="543290" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977616" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="adlkveI6hGQ+WjX1O+uzbqHlXbnJpKvoNzUVFj8j7kN5EkkzalqVzEb1rBwNZCAdwf2cBGJf0A5FRSHk9lnAAA=="/>
+            </sparkle:deltas>
         </item>
     </channel>
 </rss>

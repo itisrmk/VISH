@@ -303,6 +303,9 @@ final class LauncherController {
                     ResultActionExecutor.copy(value)
                 })
             }
+            if result.kind == .clipboard {
+                actions.append(contentsOf: clipboardInlineActions(for: result, value: value))
+            }
             actions.append(InlineActionItem(
                 id: "save-snippet",
                 title: "Save as Snippet",
@@ -340,6 +343,46 @@ final class LauncherController {
         })
         actions.append(contentsOf: bufferBatchActions())
         return actions
+    }
+
+    private func clipboardInlineActions(for result: SearchResult, value: String) -> [InlineActionItem] {
+        guard let id = clipboardID(for: result) else { return [] }
+        return [
+            InlineActionItem(
+                id: "clipboard.edit-paste",
+                title: "Edit & Paste",
+                subtitle: "Adjust text before pasting",
+                badge: "Clip",
+                symbolName: "pencil"
+            ) { [weak self] in
+                self?.hide()
+                ResultActionExecutor.editAndPasteClipboard(value)
+            },
+            InlineActionItem(
+                id: "clipboard.pin",
+                title: "Pin / Unpin",
+                subtitle: "Keep or release this clipboard item",
+                badge: "Pin",
+                symbolName: "pin"
+            ) { [weak self] in
+                Task.detached(priority: .utility) {
+                    await ClipboardHistoryStore.shared.togglePinned(id: id)
+                }
+                self?.updateInlineActions(query: self?.panel.query ?? "")
+            },
+            InlineActionItem(
+                id: "clipboard.delete",
+                title: "Delete Clipboard Item",
+                subtitle: "Remove from history",
+                badge: "Delete",
+                symbolName: "trash"
+            ) { [weak self] in
+                Task.detached(priority: .utility) {
+                    await ClipboardHistoryStore.shared.delete(id: id)
+                }
+                self?.hide()
+            }
+        ]
     }
 
     private func aiInlineActions(for result: SearchResult) -> [InlineActionItem] {
@@ -706,6 +749,11 @@ final class LauncherController {
             return host
         }
         return result.title
+    }
+
+    private func clipboardID(for result: SearchResult) -> String? {
+        guard result.kind == .clipboard, result.id.hasPrefix("clipboard:") else { return nil }
+        return String(result.id.dropFirst("clipboard:".count))
     }
 
     private func shortSubtitle(_ value: String) -> String {

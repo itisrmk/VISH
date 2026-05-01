@@ -58,6 +58,15 @@ actor SemanticVectorIndexStore {
         try? StorageCodec.save(Array(snapshot.values), to: indexURL)
     }
 
+    func pruneExcludedPaths() {
+        var snapshot = load()
+        let count = snapshot.count
+        snapshot = snapshot.filter { !LauncherPreferences.isFileSearchPathExcluded($0.key) }
+        guard snapshot.count != count else { return }
+        records = snapshot
+        try? StorageCodec.save(Array(snapshot.values), to: indexURL)
+    }
+
     func search(
         _ query: SemanticFileQuery,
         seeds: [SearchResult],
@@ -235,6 +244,7 @@ actor SemanticVectorIndexStore {
 
         for record in load().values {
             guard record.model == model, record.dimensions == queryVector.count else { continue }
+            guard !LauncherPreferences.isFileSearchPathExcluded(record.path) else { continue }
             let url = URL(fileURLWithPath: record.path)
             guard accepts(url, modifiedAt: record.modifiedAt, query: query) else { continue }
 
