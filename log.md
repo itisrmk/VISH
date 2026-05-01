@@ -801,6 +801,12 @@
   `items: alpha.5 only`
 - Release archive command passed through:
   `scripts/release.sh 0.1.0-alpha.5`
+- Published GitHub prerelease:
+  `https://github.com/itisrmk/VISH/releases/tag/v0.1.0-alpha.5`
+- Direct DMG URL:
+  `https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.5/vish-0.1.0-alpha.5.dmg`
+- Sparkle delta URL:
+  `https://github.com/itisrmk/VISH/releases/download/v0.1.0-alpha.5/vish5-4.delta`
 
 ### Known Gaps
 
